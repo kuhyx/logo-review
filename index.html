@@ -1,0 +1,939 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>Logo review</title>
+<style>
+  :root {
+    color-scheme: light dark;
+    --bg: light-dark(#f6f4f3, #211d1b);
+    --fg: light-dark(#211d1b, #eceae9);
+    --muted: light-dark(#70625b, #aaa09a);
+    --card: light-dark(#fcfbfb, #2b2624);
+    --border: light-dark(#e0dad7, #463e3a);
+    --accent: #b8862e;
+    --on-fill: #211d1b;
+    --like: #4f9a3c;
+    --dislike: #e2585f;
+  }
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; } /* author display rules must never beat `hidden` */
+  body { margin: 0; background: var(--bg); color: var(--fg); font: 15px/1.4 system-ui, sans-serif; }
+  button { font: inherit; color: inherit; background: var(--card); border: 1px solid var(--border);
+    border-radius: 8px; padding: 6px; cursor: pointer; display: inline-grid; place-items: center; }
+  button:active { transform: scale(0.94); }
+  /* Pressed = filled with the accent, so every click on a toggle is plain to see. */
+  button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--on-fill); }
+  button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+  svg.i { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 2;
+    stroke-linecap: round; stroke-linejoin: round; }
+  header { position: sticky; top: 0; z-index: 1; display: flex; flex-wrap: wrap; gap: 20px; align-items: center;
+    padding: 10px 16px; background: var(--bg); border-bottom: 1px solid var(--border); }
+  .group { display: flex; gap: 6px; align-items: center; }
+  .group img { width: 36px; height: 36px; border-radius: 4px; display: block; }
+  #shown { min-width: 3ch; font-weight: 700; font-size: 20px; font-variant-numeric: tabular-nums; }
+  #grid-copy { margin-left: auto; }
+  #ideas-open { position: relative; }
+  #ideas-open .n { position: absolute; top: -6px; right: -6px; min-width: 20px; height: 20px; border-radius: 10px;
+    background: var(--accent); color: var(--on-fill); font-size: 12px; font-weight: 700; line-height: 20px; }
+  #ideas-open .n:empty { display: none; }
+  #saved { width: 14px; height: 14px; border-radius: 50%; background: var(--like); }
+  #saved[data-dirty="1"] { background: none; border: 3px solid var(--accent); border-radius: 2px; }
+  main { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; padding: 16px; }
+  #empty { display: none; justify-content: center; padding: 64px; color: var(--muted); }
+  #empty svg { width: 96px; height: 96px; }
+  main:not(:has(.tile:not([hidden]))) + #empty { display: flex; }
+  .tile { position: relative; padding: 0; border-radius: 10px; overflow: hidden; display: block; }
+  .tile img { width: 100%; aspect-ratio: 1; display: block; }
+  .tile .id { display: flex; justify-content: space-between; align-items: center; gap: 6px; padding: 3px 8px;
+    font-size: 12px; color: var(--muted); }
+  .tile .talk { width: 14px; height: 14px; margin-left: auto; display: none; }
+  .tile[data-talk] .talk { display: block; }
+  .tile[data-talk="open"] .talk { color: var(--accent); } /* a question still waiting for an answer */
+  .tile .badge { position: absolute; top: 6px; right: 6px; width: 28px; height: 28px; border-radius: 50%;
+    background: var(--card); display: none; place-items: center; }
+  .tile[data-verdict] .badge { display: grid; }
+  .tile[data-verdict="approve"] .badge { color: var(--like); }
+  .tile[data-verdict="reject"] .badge { color: var(--dislike); }
+  .tile[data-verdict="improve"] .badge { color: var(--accent); }
+  .tile[data-verdict="reject"] img { opacity: 0.35; }
+  .tile .count:empty { display: none; }
+  .badge svg { width: 18px; height: 18px; stroke-width: 3; display: none; }
+  .tile[data-verdict="approve"] .b-approve, .tile[data-verdict="reject"] .b-reject,
+  .tile[data-verdict="improve"] .b-improve { display: block; }
+  dialog { border: 1px solid var(--border); border-radius: 12px; background: var(--bg); color: var(--fg); padding: 16px; }
+  dialog::backdrop { background: rgb(0 0 0 / 0.6); }
+  #ideas { width: min(720px, 96vw); }
+  /* The opened logo takes the whole window and never scrolls: fit() sizes the three areas. */
+  #dlg { position: fixed; inset: 0; width: 100vw; height: 100vh; max-width: none; max-height: none; margin: 0;
+    border: 0; border-radius: 0; padding: 12px; overflow: hidden; }
+  body:has(#dlg[open]) > :is(header, main, #empty) { display: none !important; } /* nothing behind it to scroll */
+  .review { display: grid; gap: 12px; width: 100%; height: 100%; }
+  .stage { grid-area: stage; position: relative; width: 100%; aspect-ratio: 1; align-self: start; }
+  #contexts { grid-area: ctx; position: relative; display: grid; place-items: center; overflow: hidden;
+    min-width: 0; min-height: 0; }
+  #ctx-inner { display: flex; flex-wrap: wrap; gap: 12px; align-content: flex-start; }
+  /* History: the same design in earlier rounds, left to right, ending with the current one. */
+  /* max-content: the strip is as wide as its steps, so fit() measures the steps and not the area around them. */
+  #history { display: none; gap: 14px; align-items: stretch; width: max-content; place-self: start; }
+  #contexts[data-view="history"] #history { display: flex; }
+  #contexts[data-view="history"] #ctx-inner { display: none; }
+  .step { width: 330px; display: grid; gap: 8px; align-content: start; padding: 10px; border: 1px solid var(--border);
+    border-radius: 10px; background: var(--card); }
+  .step .pic { position: relative; }
+  .step .pic img { width: 100%; aspect-ratio: 1; display: block; border-radius: 6px; }
+  .step .pic svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .step .head { display: flex; align-items: center; gap: 8px; font-weight: 700; }
+  .step .head .v { width: 22px; height: 22px; }
+  .step .head .v.approve { color: var(--like); } .step .head .v.reject { color: var(--dislike); }
+  .step p { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+  .step .said { padding: 6px 8px; border-left: 3px solid var(--accent); background: var(--bg); border-radius: 4px; }
+  .step .said:empty { display: none; }
+  .arrow { align-self: center; color: var(--muted); flex: none; }
+  /* Stacked form for a narrow, tall area: picture left, words right, one step per row. */
+  #history.col { flex-direction: column; }
+  #history.col .step { width: 640px; grid-template-columns: 250px 1fr; column-gap: 12px; }
+  #history.col .step .head { grid-column: 1 / -1; }
+  #history.col .arrow { rotate: 90deg; }
+  .step .words { display: grid; gap: 8px; align-content: start; }
+  #ctx-scale { position: absolute; right: 6px; bottom: 2px; font-size: 12px; color: var(--muted);
+    font-variant-numeric: tabular-nums; }
+  .stage img { width: 100%; display: block; border-radius: 8px; }
+  #overlay { position: absolute; inset: 0; width: 100%; height: 100%; touch-action: none; cursor: crosshair; }
+  .mark { fill: none; stroke-width: 6; }
+  .mark.like, .num.like { stroke: var(--like); }
+  .mark.dislike, .num.dislike { stroke: var(--dislike); }
+  .mark.dislike { stroke-dasharray: 18 10; } /* dashed as well as red: never colour alone */
+  .num { fill: var(--card); stroke-width: 4; }
+  .numtext { font: 700 26px system-ui, sans-serif; fill: var(--fg); text-anchor: middle; dominant-baseline: central;
+    pointer-events: none; }
+  .side { grid-area: side; display: flex; flex-direction: column; gap: 10px; padding: 2px; overflow: hidden;
+    min-width: 0; min-height: 0; }
+  .side > * { flex: none; }
+  .side .id { font-weight: 700; }
+  textarea, input[type="text"], input[type="url"] { width: 100%; font: inherit; color: inherit; background: var(--card);
+    border: 1px solid var(--border); border-radius: 8px; padding: 6px 8px; }
+  #marks { display: grid; gap: 6px; flex: 0 1 auto; max-height: 30%; overflow: auto; }
+  #marks .row { display: grid; grid-template-columns: 28px 1fr 36px; gap: 6px; align-items: center; }
+  #marks .n { width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; font-weight: 700;
+    border: 3px solid var(--like); }
+  #marks .n.dislike { border-color: var(--dislike); border-style: dashed; }
+  hr { width: 100%; border: 0; border-top: 1px solid var(--border); margin: 0; }
+  /* Discussion: design side on the left, kuhy on the right. */
+  /* A long talk scrolls inside its own box; the view around it stays still. */
+  #thread { display: grid; gap: 8px; align-content: start; flex: 1 1 0; min-height: 0; overflow: auto; }
+  .msg { max-width: 92%; padding: 8px 10px; border-radius: 10px; border: 1px solid var(--border);
+    background: var(--card); white-space: pre-wrap; overflow-wrap: anywhere; }
+  .msg.kuhy { justify-self: end; border-color: var(--accent); }
+  .msg.kuhy.open { border-style: dashed; } /* asked, not answered yet */
+  .send { display: grid; grid-template-columns: 1fr 40px; gap: 6px; align-items: end; }
+  /* Context previews */
+  .panel { width: var(--pw, 780px); display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-end; padding: 16px; border-radius: 10px;
+    border: 1px solid var(--border); }
+  .panel[data-scheme="light"] { background: #f6f4f3; color: #211d1b; --line: #e0dad7; --ui: #fcfbfb; --ink: #70625b; }
+  .panel[data-scheme="dark"] { background: #211d1b; color: #eceae9; --line: #463e3a; --ui: #2b2624; --ink: #aaa09a; }
+  .ctx { display: grid; gap: 6px; }
+  .ctx .row { display: flex; gap: 10px; align-items: flex-end; }
+  .ctx img { display: block; flex: none; }
+  .ctx.round img { border-radius: 50%; }
+  .ctx.square img { border-radius: 22%; }
+  .chip { justify-self: start; min-width: 26px; height: 20px; padding: 0 6px; border-radius: 5px; color: #fff;
+    font-size: 12px; font-weight: 700; line-height: 20px; text-align: center; }
+  .px { font-size: 11px; color: var(--ink); text-align: center; font-variant-numeric: tabular-nums; }
+  .cell { display: grid; gap: 2px; justify-items: center; }
+  .tabstrip { display: flex; gap: 10px; align-items: flex-end; }
+  .tab { display: flex; align-items: center; gap: 8px; height: 34px; width: 190px; padding: 0 10px;
+    border: 1px solid var(--line); border-bottom: 0; border-radius: 8px 8px 0 0; background: var(--ui); }
+  .tab .line { flex: 1; height: 8px; border-radius: 4px; background: var(--line); }
+  .tab.big { height: 48px; width: 72px; justify-content: center; border-bottom: 1px solid var(--line); border-radius: 8px; }
+  .bar { display: flex; align-items: center; gap: 16px; height: 52px; padding: 0 12px; border: 1px solid var(--line);
+    border-radius: 6px; }
+  .bar .nav { width: 28px; height: 28px; border-radius: 6px; background: var(--line); }
+  .card { position: relative; width: 400px; aspect-ratio: 1200 / 630; border-radius: 8px 8px 0 0;
+    background: var(--field, #211d1b); overflow: hidden; }
+  /* Centred by position: a percentage height does not resolve inside an auto grid row. */
+  .card img { position: absolute; top: 50%; left: 50%; height: 67%; aspect-ratio: 1; translate: -50% -50%; }
+  .cardfoot { width: 400px; padding: 8px 10px; border: 1px solid var(--line); border-top: 0; border-radius: 0 0 8px 8px;
+    background: var(--ui); display: grid; gap: 6px; }
+  .cardfoot i { display: block; height: 8px; border-radius: 4px; background: var(--line); }
+  .cardfoot i + i { width: 60%; }
+  /* Suggestions */
+  #idea-list { display: grid; gap: 8px; margin: 12px 0; }
+  .idea { display: grid; grid-template-columns: 1fr 36px; gap: 8px; padding: 8px 10px; border: 1px solid var(--border);
+    border-radius: 10px; background: var(--card); }
+  .idea p { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+  .idea a { color: var(--accent); overflow-wrap: anywhere; }
+  .idea img { max-width: 160px; max-height: 120px; border-radius: 6px; display: block; margin-top: 6px; }
+  .field { display: grid; grid-template-columns: 28px 1fr; gap: 8px; align-items: start; margin-bottom: 8px; }
+  .field > svg { margin-top: 6px; color: var(--muted); }
+  /* Compare: one type's variants side by side, each as the 20 px round avatar. Full screen, no scrolling. */
+  #types button { min-width: 36px; font-weight: 700; }
+  #types button[data-picked] { border-color: var(--like); box-shadow: inset 0 -3px 0 var(--like); }
+  #cmp { width: 100vw; height: 100vh; max-width: none; max-height: none; margin: 0; border: 0; border-radius: 0; overflow: hidden; box-sizing: border-box; }
+  #cmp[open] { display: grid; grid-template-rows: auto 1fr; gap: 12px; }
+  #cmp-cols { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 12px; min-height: 0; }
+  .col { display: grid; grid-template-rows: auto 1fr auto auto; justify-items: center; align-items: center; gap: 1.500vh; min-height: 0; min-width: 0;
+    padding: 1.500vh 8px; border: 1px solid var(--border); border-radius: 10px; background: var(--card); }
+  .col { container-type: inline-size; }
+  .col.before { border-style: dashed; background: none; }
+  .col[data-picked] { border-color: var(--like); box-shadow: 0 0 0 2px var(--like); }
+  .col .name { font-weight: 700; }
+  .col img.full { width: min(100cqw - 16px, 36vh); aspect-ratio: 1; border-radius: 8px; }
+  .col canvas { width: min(100cqw - 16px, 24vh); aspect-ratio: 1; border-radius: 50%; image-rendering: pixelated; }
+  .col .sizes { display: flex; align-items: center; gap: 12px; padding: 0.600vh 12px; border-radius: 8px; background: #f6f4f3; }
+  .col .sizes.dark { background: #0d1117; }
+  .col .sizes img { border-radius: 50%; display: block; }
+  .col .foot { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 1vh 10px; }
+  /* The last step: one large button per finalist makes it the winner. */
+  .col .pick.crown { width: 96px; height: 52px; border-width: 2px; border-color: var(--accent); }
+  .col .pick.crown svg { width: 30px; height: 30px; }
+  #types [data-pending] { background: var(--accent); border-color: var(--accent); color: var(--on-fill); animation: wait 1.200s ease-in-out infinite alternate; }
+  @keyframes wait { to { box-shadow: 0 0 0 5px color-mix(in srgb, var(--accent) 35%, transparent); } }
+  @media (prefers-reduced-motion: reduce) { #types [data-pending] { animation: none; } }
+  .copy .ic-ok, .copy .ic-fail, .copy[data-done] .ic-copy { display: none; }
+  .copy[data-done="1"] { background: var(--like); border-color: var(--like); color: var(--on-fill); }
+  .copy[data-done="1"] .ic-ok, .copy[data-done="0"] .ic-fail { display: block; }
+  .copy[data-done="0"] { background: var(--dislike); border-color: var(--dislike); color: var(--on-fill); }
+  .col .pick[aria-pressed="true"] { background: var(--like); border-color: var(--like); color: var(--on-fill); }
+  #overlay { touch-action: none; } /* a finger on the logo draws; it does not scroll the page */
+  /* The phone link as a QR code (only this computer is offered it), and a finished picture to long-press. */
+  #phone img { display: block; width: min(80vw, 70vh, 420px); aspect-ratio: 1; background: #fff; border-radius: 8px; }
+  #pic { width: 100vw; max-width: none; max-height: 100vh; margin: auto 0; border-radius: 0; padding: 8px; }
+  #pic img { display: block; width: 100%; height: auto; margin-top: 8px; }
+  /* A phone: thumb-sized buttons, two logos per row, and the opened logo as one column that scrolls down. */
+  @media (max-width: 760px) {
+    button, #types button { min-width: 44px; min-height: 44px; }
+    header { gap: 8px; padding: 8px; }
+    main { grid-template-columns: repeat(2, 1fr); gap: 8px; padding: 8px; }
+    #dlg { overflow-y: auto; padding: 8px; }
+    .review { display: flex; flex-direction: column; height: auto; }
+    .side { overflow: visible; order: 2; } /* controls right under the logo, previews after them */
+    #contexts { order: 3; }
+    #thread { flex: none; max-height: 50vh; }
+    #marks { max-height: none; }
+    #marks .row { grid-template-columns: 28px 1fr 44px; }
+    #contexts { place-items: start; width: 100%; min-height: 40px; }
+    #cmp { padding: 8px; }
+    /* Compare: one logo per screen, the next a swipe away. */
+    #cmp-cols { grid-auto-columns: 82vw; overflow-x: auto; scroll-snap-type: x mandatory; overscroll-behavior-x: contain; }
+    .col { scroll-snap-align: center; }
+  }
+  .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+</style>
+</head>
+<body>
+<header>
+  <div class="group" id="tools" role="group" aria-label="Tool"></div>
+  <div class="group" id="shows" role="group" aria-label="Verdict filter">
+    <button data-show="all" aria-pressed="true" aria-label="All logos" title="All logos"><svg class="i" viewBox="0 0 24 24"><rect x="4" y="4" width="6" height="6"/><rect x="14" y="4" width="6" height="6"/><rect x="4" y="14" width="6" height="6"/><rect x="14" y="14" width="6" height="6"/></svg></button>
+    <button data-show="none" aria-pressed="false" aria-label="Not judged yet" title="Not judged yet"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8" stroke-dasharray="3 4"/></svg></button>
+    <button data-show="approve" aria-pressed="false" aria-label="Approved" title="Approved"><svg class="i" viewBox="0 0 24 24"><path d="M5 12l5 5 9-10"/></svg></button>
+    <button data-show="improve" aria-pressed="false" aria-label="Needs improvement" title="Needs improvement"><svg class="i" viewBox="0 0 24 24"><path d="M4 20l4-1 11-11-3-3L5 16z"/></svg></button>
+    <button data-show="reject" aria-pressed="false" aria-label="Rejected" title="Rejected"><svg class="i" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+  </div>
+  <div class="group" id="types" role="group" aria-label="Compare one type side by side"></div>
+  <output id="shown" aria-label="Logos shown"></output>
+  <button id="grid-copy" class="copy" aria-label="Copy every logo as one picture" title="Copy every logo as one picture"><svg class="i ic-copy" viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg><svg class="i ic-ok" viewBox="0 0 24 24"><path d="M5 12l5 5 9-10"/></svg><svg class="i ic-fail" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+  <button id="phone-open" hidden aria-label="Open on a phone" title="Open on a phone"><svg class="i" viewBox="0 0 24 24"><rect x="7" y="3" width="10" height="18" rx="2"/><path d="M11 18h2"/></svg></button>
+  <button id="ideas-open" aria-label="Suggest a new direction" title="Suggest a new direction"><svg class="i" viewBox="0 0 24 24"><path d="M9 18h6M10 21h4M8 14a6 6 0 1 1 8 0c-.7.7-1 1.300-1 2H9c0-.7-.3-1.300-1-2z"/></svg><span class="n"></span></button>
+  <div id="saved" role="status" aria-label="Saved" title="Saved"></div>
+</header>
+<main id="grid"></main>
+<div id="empty" role="status" aria-label="No logo matches these filters"><svg class="i" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6"/><path d="M20 20l-4.500-4.500M8.500 8.500l5 5M13.500 8.500l-5 5"/></svg></div>
+
+<dialog id="dlg" aria-labelledby="dlg-id">
+  <div class="review">
+      <div class="stage">
+        <img id="big" alt="">
+        <svg id="overlay" viewBox="0 0 1000 1000" aria-label="Draw on the logo">
+          <defs>
+            <marker id="head-like" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#4f9a3c"/></marker>
+            <marker id="head-dislike" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#e2585f"/></marker>
+          </defs>
+          <g id="shapes"></g>
+        </svg>
+      </div>
+      <div id="contexts" aria-label="This logo where it will be shown"><div id="ctx-inner"></div><div id="history"></div><output id="ctx-scale" aria-label="Preview scale"></output></div>
+    <div class="side">
+      <div class="group">
+        <button id="prev" aria-label="Previous logo" title="Previous logo"><svg class="i" viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></button>
+        <span class="id" id="dlg-id"></span>
+        <button id="next" aria-label="Next logo" title="Next logo"><svg class="i" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg></button>
+        <button id="hist-toggle" aria-pressed="false" aria-label="History of this design" title="History of this design" style="margin-left:auto"><svg class="i" viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 0 2.500-5.800M4 4v4h4M12 8v4l3 2"/></svg></button>
+        <button id="close" aria-label="Close" title="Close"><svg class="i" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+      </div>
+      <div class="group" role="group" aria-label="Verdict">
+        <button data-verdict="approve" aria-pressed="false" aria-label="Approve" title="Approve"><svg class="i" viewBox="0 0 24 24"><path d="M5 12l5 5 9-10"/></svg></button>
+        <button data-verdict="improve" aria-pressed="false" aria-label="Request improvement" title="Request improvement"><svg class="i" viewBox="0 0 24 24"><path d="M4 20l4-1 11-11-3-3L5 16z"/></svg></button>
+        <button data-verdict="reject" aria-pressed="false" aria-label="Reject" title="Reject"><svg class="i" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+      </div>
+      <label class="sr" for="note">Note about the whole logo</label>
+      <textarea id="note" rows="2"></textarea>
+      <div class="group" role="group" aria-label="Shape">
+        <button data-tool="point" aria-pressed="true" aria-label="Point" title="Point"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3" fill="currentColor"/></svg></button>
+        <button data-tool="rect" aria-pressed="false" aria-label="Rectangle" title="Rectangle"><svg class="i" viewBox="0 0 24 24"><rect x="4" y="6" width="16" height="12"/></svg></button>
+        <button data-tool="ellipse" aria-pressed="false" aria-label="Circle" title="Circle"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/></svg></button>
+        <button data-tool="arrow" aria-pressed="false" aria-label="Arrow" title="Arrow"><svg class="i" viewBox="0 0 24 24"><path d="M5 19L19 5M10 5h9v9"/></svg></button>
+        <span style="width:12px"></span>
+        <button data-like="1" aria-pressed="true" aria-label="I like this part" title="I like this part"><svg class="i" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button>
+        <button data-like="0" aria-pressed="false" aria-label="I dislike this part" title="I dislike this part"><svg class="i" viewBox="0 0 24 24"><path d="M5 12h14"/></svg></button>
+      </div>
+      <div id="marks"></div>
+      <hr>
+      <div id="thread" aria-label="Discussion about this logo"></div>
+      <div class="send">
+        <label class="sr" for="ask">Ask or say something about this logo</label>
+        <textarea id="ask" rows="2"></textarea>
+        <button id="send" aria-label="Send" title="Send"><svg class="i" viewBox="0 0 24 24"><path d="M4 12l16-8-6 16-3-6z"/></svg></button>
+      </div>
+    </div>
+  </div>
+</dialog>
+
+<dialog id="cmp" aria-label="Compare side by side at 20 px">
+  <div class="group">
+    <div class="group" id="cmp-types" role="group" aria-label="Type"></div>
+    <button id="cmp-copy" class="copy" aria-label="Copy this line-up as one picture" title="Copy this line-up as one picture" style="margin-left:auto"><svg class="i ic-copy" viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg><svg class="i ic-ok" viewBox="0 0 24 24"><path d="M5 12l5 5 9-10"/></svg><svg class="i ic-fail" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    <button id="cmp-close" aria-label="Close" title="Close"><svg class="i" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+  </div>
+  <div id="cmp-cols"></div>
+</dialog>
+
+<dialog id="phone" aria-label="Scan to open on a phone">
+  <div class="group"><svg class="i" viewBox="0 0 24 24"><rect x="7" y="3" width="10" height="18" rx="2"/><path d="M11 18h2"/></svg><button id="phone-close" aria-label="Close" title="Close" style="margin-left:auto"><svg class="i" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+  <img alt="QR code with this tool's address on the local network" style="margin-top:8px">
+</dialog>
+
+<dialog id="pic" aria-label="The finished picture: press and hold it to copy or share">
+  <div class="group"><svg class="i" viewBox="0 0 24 24"><path d="M12 15V4M8 8l4-4 4 4M5 14v5h14v-5"/></svg><button id="pic-close" aria-label="Close" title="Close" style="margin-left:auto"><svg class="i" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+  <img alt="The line-up as one picture">
+</dialog>
+
+<dialog id="ideas" aria-label="Suggest new directions">
+  <div class="group">
+    <svg class="i" viewBox="0 0 24 24"><path d="M9 18h6M10 21h4M8 14a6 6 0 1 1 8 0c-.7.7-1 1.300-1 2H9c0-.7-.3-1.300-1-2z"/></svg>
+    <button id="ideas-close" aria-label="Close" title="Close" style="margin-left:auto"><svg class="i" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+  </div>
+  <div id="idea-list"></div>
+  <div class="field">
+    <svg class="i" viewBox="0 0 24 24"><path d="M4 20l4-1 11-11-3-3L5 16z"/></svg>
+    <div><label class="sr" for="idea-text">Describe the direction or style</label><textarea id="idea-text" rows="3"></textarea></div>
+  </div>
+  <div class="field">
+    <svg class="i" viewBox="0 0 24 24"><path d="M10 14a4 4 0 0 0 6 0l3-3a4 4 0 0 0-6-6l-1 1M14 10a4 4 0 0 0-6 0l-3 3a4 4 0 0 0 6 6l1-1"/></svg>
+    <div><label class="sr" for="idea-ref">Reference link (optional)</label><input id="idea-ref" type="url"></div>
+  </div>
+  <div class="field">
+    <svg class="i" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M4 18l6-5 4 3 3-2 4 4"/></svg>
+    <div><label class="sr" for="idea-img">Reference picture (optional)</label><input id="idea-img" type="file" accept="image/png,image/jpeg,image/webp,image/gif"></div>
+  </div>
+  <button id="idea-add" aria-label="Add suggestion" title="Add suggestion"><svg class="i" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button>
+</dialog>
+
+<script type="module">
+// The round on show (tools and design ids) comes from the server's manifest.
+const MANIFEST = await (await fetch("/api/manifest")).json();
+const TOOLS = MANIFEST.tools;
+const KEYS = [];
+// A tool may make only some versions (from round 5: svg and css are colour only).
+const modesOf = (tool) => MANIFEST.modes?.[tool] ?? ["m", "c"];
+// A tool may also skip designs kuhy dropped for it (from round 9: rough draws only two rows).
+const skips = (tool) => MANIFEST.skip?.[tool] ?? [];
+for (const tool of TOOLS) for (const id of MANIFEST.ids) for (const m of modesOf(tool)) if (!skips(tool).includes(id)) KEYS.push(`${tool}/${id}-${m}`);
+const $ = (sel, root = document) => root.querySelector(sel);
+const NS = "http://www.w3.org/2000/svg";
+const X = '<svg class="i" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>';
+
+let state = { logos: {}, ideas: [], picks: {}, winner: null, dropped: [] };
+let cmpType = null;
+let claude = { rationale: { designs: {}, tools: {} }, answers: {} };
+let past = { steps: {}, said: {}, tools: {} };
+let filterTool = "all", filterShow = "all", current = null, tool = "point", like = true, saveTimer = 0, pageScroll = 0;
+
+const entry = (key) => {
+  const e = (state.logos[key] ??= { verdict: null, note: "", marks: [], thread: [] });
+  e.thread ??= [];
+  return e;
+};
+const label = (key) => { const [t, n] = key.split("/"); return `${n.slice(0, 2)} ${t} ${n.endsWith("m") ? "mono" : "colour"}`; };
+const text = (tag, cls, value) => { const n = document.createElement(tag); n.className = cls; n.textContent = value; return n; };
+
+function markDirty() {
+  $("#saved").dataset.dirty = "1";
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(save, 350);
+}
+async function save() {
+  // Drop untouched entries so the file holds only real feedback.
+  const logos = Object.fromEntries(Object.entries(state.logos).filter(([, e]) => e.verdict || e.note || e.marks.length || e.thread?.length));
+  const res = await fetch("/api/state", { method: "PUT", body: JSON.stringify({ logos, ideas: state.ideas, picks: state.picks, winner: state.winner, dropped: state.dropped }) }).catch(() => null);
+  if (res?.ok) $("#saved").dataset.dirty = "0";
+}
+async function loadClaude() {
+  claude = await (await fetch("/api/claude")).json().catch(() => claude);
+}
+
+// ---- grid -------------------------------------------------------------------
+function buildGrid() {
+  const badge = '<span class="badge"><svg class="i b-approve" viewBox="0 0 24 24"><path d="M5 12l5 5 9-10"/></svg><svg class="i b-improve" viewBox="0 0 24 24"><path d="M4 20l4-1 11-11-3-3L5 16z"/></svg><svg class="i b-reject" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></span>';
+  const talk = '<svg class="i talk" viewBox="0 0 24 24"><path d="M4 5h16v11H9l-5 4z"/></svg>';
+  $("#grid").innerHTML = KEYS.map((key) =>
+    `<button class="tile" data-key="${key}" aria-label="Review ${label(key)}"><img src="/img/${key}.png" alt="" loading="eager">${badge}<span class="id"><span>${key.split("/")[1].slice(0, 2)}${key.startsWith(TOOLS[0] + "/") ? "" : " " + key.split("/")[0]}</span>${talk}<span class="count"></span></span></button>`).join("");
+  $("#tools").innerHTML = `<button data-filter="all" aria-pressed="true" aria-label="All tools" title="All tools"><svg class="i" viewBox="0 0 24 24"><rect x="4" y="4" width="6" height="6"/><rect x="14" y="4" width="6" height="6"/><rect x="4" y="14" width="6" height="6"/><rect x="14" y="14" width="6" height="6"/></svg></button>` +
+    TOOLS.map((t) => `<button data-filter="${t}" aria-pressed="false" aria-label="${t} only" title="${t} only"><img src="/img/${t}/${MANIFEST.ids.findLast((id) => !skips(t).includes(id))}-c.png" alt=""></button>`).join("");
+}
+function answered(key) {
+  const asked = state.logos[key]?.thread ?? [], replies = claude.answers[key] ?? [];
+  const lastAsk = asked.at(-1)?.at ?? "", lastReply = replies.at(-1)?.at ?? "";
+  return asked.length === 0 ? null : lastReply > lastAsk;
+}
+function refreshGrid() {
+  let shown = 0;
+  for (const tile of document.querySelectorAll(".tile")) {
+    const key = tile.dataset.key, e = state.logos[key];
+    if (e?.verdict) tile.dataset.verdict = e.verdict; else delete tile.dataset.verdict;
+    const talked = answered(key);
+    if (talked === null) delete tile.dataset.talk; else tile.dataset.talk = talked ? "answered" : "open";
+    $(".count", tile).textContent = e?.marks.length ? String(e.marks.length) : "";
+    const okTool = filterTool === "all" || key.startsWith(filterTool + "/");
+    const okShow = filterShow === "all" || (filterShow === "none" ? !e?.verdict : e?.verdict === filterShow);
+    tile.hidden = !(okTool && okShow);
+    if (!tile.hidden) shown += 1;
+  }
+  $("#shown").textContent = String(shown);
+  $("#ideas-open .n").textContent = state.ideas.length ? String(state.ideas.length) : "";
+}
+function press(attr, value) {
+  for (const b of document.querySelectorAll(`[${attr}]`)) b.setAttribute("aria-pressed", String(b.getAttribute(attr) === value));
+}
+
+// ---- context previews: the logo where people will really meet it --------------
+const AVATARS = [
+  { id: "linkedin", chip: "in", name: "LinkedIn", color: "#0a66c2", sizes: [200, 100, 48, 32], cls: "round" },
+  { id: "facebook", chip: "f", name: "Facebook", color: "#1877f2", sizes: [168, 40, 32], cls: "round" },
+  { id: "discord", chip: "D", name: "Discord", color: "#5865f2", sizes: [80, 40, 32], cls: "round" },
+  { id: "github", chip: "GH", name: "GitHub", color: "#6e7781", sizes: [260, 40, 20], cls: "round" },
+  { id: "square", chip: "□", name: "Square app icon and square avatar", color: "#70625b", sizes: [180, 64, 32], cls: "square" },
+];
+function contextPanel(scheme, src) {
+  const img = (px) => `<img src="${src}" width="${px}" height="${px}" alt="">`;
+  const cell = (px) => `<span class="cell">${img(px)}<span class="px">${px}</span></span>`;
+  const avatars = AVATARS.map((a) =>
+    `<div class="ctx ${a.cls}" data-ctx="${a.id}" title="${a.name}"><span class="chip" style="background:${a.color}" aria-label="${a.name}">${a.chip}</span><div class="row">${a.sizes.map(cell).join("")}</div></div>`).join("");
+  const tab = `<div class="ctx" data-ctx="tab" title="Browser tab and bookmark tile"><div class="tabstrip"><span class="tab">${img(16)}<span class="line"></span>${X.replace('class="i"', 'class="i" style="width:14px;height:14px"')}</span><span class="tab big">${img(32)}</span></div><span class="px">16 · 32</span></div>`;
+  const header = (id, width, name) => `<div class="ctx" data-ctx="${id}" title="${name}"><div class="bar" style="width:${width}px">${img(28)}<span class="nav"></span><span class="nav"></span></div><span class="px">${width}</span></div>`;
+  const og = `<div class="ctx" data-ctx="og" title="Link preview card (og:image, 1200 x 630)"><div><div class="card">${img(0).replace('width="0" height="0"', "")}</div><div class="cardfoot"><i></i><i></i></div></div><span class="px">1200 × 630</span></div>`;
+  return `<div class="panel" data-scheme="${scheme}">${avatars}${tab}${header("header-desktop", 720, "Site header on desktop")}${header("header-mobile", 360, "Site header on mobile")}${og}</div>`;
+}
+function renderContexts(key) {
+  const src = `/img/${key}.png`;
+  $("#ctx-inner").innerHTML = contextPanel("light", src) + contextPanel("dark", src);
+}
+
+/**
+ * Lay the opened logo out to fill the window with no scrolling.
+ * Wide windows: big logo | previews | side panel. Tall windows: big logo and
+ * side panel on top, previews across the bottom. The previews keep their real
+ * pixel sizes when they fit and shrink as one block (never grow) when they do
+ * not; the shown percentage says which.
+ */
+function fit() {
+  if (!$("#dlg").open) return;
+  const review = $(".review"), W = review.clientWidth, H = review.clientHeight, gap = 12;
+  if (matchMedia("(max-width: 760px)").matches) {
+    // A phone: CSS stacks logo, controls and previews in one column; only scale the previews to its width.
+    review.style.gridTemplate = "";
+    const area = $("#contexts"), history = area.dataset.view === "history", block = history ? $("#history") : $("#ctx-inner");
+    block.style.zoom = 1;
+    if (history) block.classList.add("col"); else { block.style.setProperty("--pw", "780px"); block.style.width = "780px"; }
+    // The stacked history strip does not always report its steps' width: measure the steps themselves.
+    if (history) block.style.width = `${Math.max(...[...block.children].map((c) => c.offsetWidth))}px`;
+    const zoom = Math.min(1, area.clientWidth / block.offsetWidth);
+    block.style.zoom = zoom;
+    if (!history) block.dataset.zoom = String(zoom);
+    $("#ctx-scale").textContent = `${Math.round(zoom * 100)}%`;
+    return;
+  }
+  const side = Math.round(Math.min(560, Math.max(300, W * 0.22)));
+  if (W / H >= 1.3) {
+    const stage = Math.floor(Math.min(H, (W - side - 2 * gap) * 0.5));
+    review.style.gridTemplate = `"stage ctx side" minmax(0, 1fr) / ${stage}px minmax(0, 1fr) ${side}px`;
+  } else {
+    const stage = Math.floor(Math.min(W - side - gap, (H - gap) * 0.5));
+    review.style.gridTemplate = `"stage side" ${stage}px "ctx ctx" minmax(0, 1fr) / ${stage}px minmax(0, 1fr)`;
+  }
+  const box = $("#contexts"), inner = $("#ctx-inner");
+  const bw = box.clientWidth, bh = box.clientHeight - 20; // 20: room for the scale readout
+  if (box.dataset.view === "history") {
+    // The history strip shrinks as one block to fit, like the previews.
+    const strip = $("#history");
+    strip.style.zoom = 1;
+    strip.style.width = ""; // a phone-size fit may have pinned it
+    // Side by side or stacked: whichever shows the steps larger in this area.
+    const zoomFor = (stacked) => { strip.classList.toggle("col", stacked); return Math.min(1, bw / strip.offsetWidth, bh / strip.offsetHeight); };
+    const zoom = zoomFor(false) >= zoomFor(true) ? zoomFor(false) : zoomFor(true);
+    strip.style.zoom = zoom;
+    $("#ctx-scale").textContent = `${Math.round(zoom * 100)}%`;
+    return;
+  }
+  let best = null;
+  inner.style.zoom = 1;
+  for (const cols of [1, 2]) {
+    for (let pw = 780; pw <= 1900; pw += 80) {
+      inner.style.setProperty("--pw", `${pw}px`);
+      inner.style.width = `${cols * pw + (cols - 1) * gap}px`;
+      const w = inner.offsetWidth, h = inner.offsetHeight;
+      const zoom = Math.min(1, bw / w, bh / h);
+      const fill = zoom * zoom * w * h;
+      if (!best || zoom > best.zoom + 0.001 || (zoom > best.zoom - 0.001 && fill > best.fill)) best = { zoom, cols, pw, fill };
+    }
+  }
+  inner.style.setProperty("--pw", `${best.pw}px`);
+  inner.style.width = `${best.cols * best.pw + (best.cols - 1) * gap}px`;
+  inner.style.zoom = best.zoom;
+  inner.dataset.zoom = String(best.zoom);
+  $("#ctx-scale").textContent = `${Math.round(best.zoom * 100)}%`;
+}
+addEventListener("resize", fit);
+
+// ---- history --------------------------------------------------------------------
+const VERDICT_ICON = { approve: '<path d="M5 12l5 5 9-10"/>', reject: '<path d="M6 6l12 12M18 6L6 18"/>', improve: '<path d="M4 20l4-1 11-11-3-3L5 16z"/>' };
+function renderHistory() {
+  const [, name] = current.split("/"), id = name.slice(0, 2), mode = name.slice(-1);
+  const steps = past.steps[id] ?? [];
+  const nodes = [];
+  steps.forEach((step, i) => {
+    if (i) { const a = document.createElement("div"); a.className = "arrow"; a.innerHTML = '<svg class="i" viewBox="0 0 24 24"><path d="M4 12h15M13 6l6 6-6 6"/></svg>'; nodes.push(a); }
+    const card = document.createElement("div");
+    card.className = "step";
+    card.dataset.round = step.round;
+    const now = step.round === MANIFEST.round;
+    const src = now ? `/img/${current}.png` : step.round === 1 ? `/old/1/${step.id}.png` : `/old/${step.round}/${step.id}-${mode}.png`;
+    // What kuhy said about this exact logo in that round's review, with his marks drawn back on it.
+    // He may have spoken about it in several tools; gather them all (the flat version first).
+    const entries = now ? [] : (past.tools[step.round] ?? []).map((t) => past.said[step.round]?.[`${t}/${step.id}-${mode}`]).filter(Boolean);
+    const said = entries.length === 0 ? null : {
+      verdict: entries.find((e) => e.verdict)?.verdict ?? null,
+      marks: entries.flatMap((e) => e.marks ?? []),
+      note: [...new Set(entries.map((e) => e.note).filter(Boolean))].join("\n"),
+    };
+    const badge = said?.verdict ? `<svg class="i v ${said.verdict}" viewBox="0 0 24 24">${VERDICT_ICON[said.verdict]}</svg>` : "";
+    card.innerHTML = `<div class="head"><span>${step.round} · ${step.id.toUpperCase()}</span>${badge}</div><div class="pic"><img src="${src}" alt=""><svg viewBox="0 0 1000 1000"></svg></div>`;
+    const quotes = [];
+    (said?.marks ?? []).forEach((mark, n) => {
+      const svgEl = card.querySelector("svg:not(.i)");
+      svgEl.append(shape(mark), el("circle", { class: `num ${mark.like ? "like" : "dislike"}`, cx: mark.x1 * 1000, cy: mark.y1 * 1000, r: 30 }));
+      const num = el("text", { class: "numtext", x: mark.x1 * 1000, y: mark.y1 * 1000 });
+      num.textContent = String(n + 1);
+      svgEl.append(num);
+      if (mark.text) quotes.push(`${n + 1}. ${mark.text}`);
+    });
+    if (said?.note) quotes.push(said.note);
+    const words = document.createElement("div");
+    words.className = "words";
+    words.append(text("p", "said", quotes.join("\n")), text("p", "changed", step.text));
+    card.append(words);
+    nodes.push(card);
+  });
+  $("#history").replaceChildren(...nodes);
+}
+// The og card is filled with the logo's own background, read from its corner pixel.
+$("#big").addEventListener("load", () => {
+  const c = document.createElement("canvas");
+  c.width = c.height = 1;
+  const g = c.getContext("2d");
+  g.drawImage($("#big"), 6, 6, 1, 1, 0, 0, 1, 1);
+  const [r, gr, b] = g.getImageData(0, 0, 1, 1).data;
+  $("#contexts").style.setProperty("--field", `rgb(${r} ${gr} ${b})`);
+});
+
+// ---- discussion ---------------------------------------------------------------
+function renderThread() {
+  const [toolName, name] = current.split("/"), design = name.slice(0, 2);
+  const mine = entry(current).thread.map((m) => ({ ...m, who: "kuhy" }));
+  const replies = (claude.answers[current] ?? []).map((m) => ({ ...m, who: "claude" }));
+  const talk = [...mine, ...replies].sort((a, b) => (a.at < b.at ? -1 : 1));
+  const why = [claude.rationale.designs[design], claude.rationale.tools[toolName]].filter(Boolean).join("\n\n");
+  const nodes = why ? [text("div", "msg claude", why)] : [];
+  const open = answered(current) === false;
+  talk.forEach((m, i) => nodes.push(text("div", `msg ${m.who}${open && m.who === "kuhy" && i === talk.length - 1 ? " open" : ""}`, m.text)));
+  $("#thread").replaceChildren(...nodes);
+}
+function sendQuestion() {
+  const value = $("#ask").value.trim();
+  if (!value) return;
+  entry(current).thread.push({ text: value, at: new Date().toISOString() });
+  $("#ask").value = "";
+  renderThread(); refreshGrid(); markDirty();
+}
+
+// ---- review dialog ------------------------------------------------------------
+async function open(key) {
+  current = key;
+  $("#big").src = `/img/${key}.png`;
+  $("#dlg-id").textContent = label(key);
+  $("#note").value = entry(key).note;
+  $("#ask").value = "";
+  renderMarks();
+  renderContexts(key);
+  renderHistory();
+  renderThread();
+  if (!$("#dlg").open) { pageScroll = scrollY; $("#dlg").showModal(); }
+  fit();
+  $("#dlg").scrollTop = 0; // on a phone the view scrolls: always start at the logo, not at the focused button
+  await loadClaude(); // answers written since the page loaded
+  if (current === key) { renderThread(); refreshGrid(); }
+}
+function step(delta) {
+  const visible = KEYS.filter((k) => !$(`.tile[data-key="${k}"]`).hidden);
+  const list = visible.length ? visible : KEYS;
+  const i = list.indexOf(current);
+  open(list[(i + delta + list.length) % list.length]);
+}
+function el(name, attrs) {
+  const node = document.createElementNS(NS, name);
+  for (const [k, v] of Object.entries(attrs)) node.setAttribute(k, v);
+  return node;
+}
+function shape(mark) {
+  const cls = `mark ${mark.like ? "like" : "dislike"}`;
+  const [x1, y1, x2, y2] = [mark.x1, mark.y1, mark.x2, mark.y2].map((v) => v * 1000);
+  if (mark.kind === "rect") return el("rect", { class: cls, x: Math.min(x1, x2), y: Math.min(y1, y2), width: Math.abs(x2 - x1), height: Math.abs(y2 - y1) });
+  if (mark.kind === "ellipse") return el("ellipse", { class: cls, cx: (x1 + x2) / 2, cy: (y1 + y2) / 2, rx: Math.abs(x2 - x1) / 2, ry: Math.abs(y2 - y1) / 2 });
+  if (mark.kind === "arrow") return el("line", { class: cls, x1, y1, x2, y2, "marker-end": `url(#head-${mark.like ? "like" : "dislike"})` });
+  return el("circle", { class: cls, cx: x1, cy: y1, r: 6 });
+}
+function renderMarks(draft) {
+  const e = entry(current), shapes = $("#shapes");
+  shapes.replaceChildren();
+  e.marks.forEach((mark, i) => {
+    shapes.append(shape(mark));
+    shapes.append(el("circle", { class: `num ${mark.like ? "like" : "dislike"}`, cx: mark.x1 * 1000, cy: mark.y1 * 1000, r: 22 }));
+    const num = el("text", { class: "numtext", x: mark.x1 * 1000, y: mark.y1 * 1000 });
+    num.textContent = String(i + 1);
+    shapes.append(num);
+  });
+  if (draft) shapes.append(shape(draft));
+  for (const b of document.querySelectorAll("[data-verdict]")) b.setAttribute("aria-pressed", String(b.dataset.verdict === e.verdict));
+  if (draft) return; // keep the comment inputs (and focus) while dragging
+  $("#marks").replaceChildren(...e.marks.map((mark, i) => {
+    const row = document.createElement("div");
+    row.className = "row";
+    row.innerHTML = `<span class="n ${mark.like ? "" : "dislike"}">${i + 1}</span><input type="text" aria-label="Comment on mark ${i + 1}"><button aria-label="Delete mark ${i + 1}" title="Delete mark ${i + 1}">${X}</button>`;
+    const input = $("input", row);
+    input.value = mark.text;
+    input.addEventListener("input", () => { mark.text = input.value; markDirty(); });
+    $("button", row).addEventListener("click", () => { e.marks.splice(i, 1); renderMarks(); refreshGrid(); markDirty(); });
+    return row;
+  }));
+}
+
+// Drawing: pointer position relative to the logo, 0..1 on both axes.
+const overlay = $("#overlay");
+let drag = null;
+const at = (ev) => {
+  const r = overlay.getBoundingClientRect();
+  const clamp = (v) => Math.min(1, Math.max(0, v));
+  return [clamp((ev.clientX - r.left) / r.width), clamp((ev.clientY - r.top) / r.height)];
+};
+overlay.addEventListener("pointerdown", (ev) => {
+  const [x, y] = at(ev);
+  drag = { kind: tool, like, x1: x, y1: y, x2: x, y2: y, text: "" };
+  overlay.setPointerCapture(ev.pointerId);
+  renderMarks(drag);
+});
+overlay.addEventListener("pointermove", (ev) => {
+  if (!drag) return;
+  [drag.x2, drag.y2] = at(ev);
+  renderMarks(drag);
+});
+overlay.addEventListener("pointerup", () => {
+  if (!drag) return;
+  const tiny = Math.hypot(drag.x2 - drag.x1, drag.y2 - drag.y1) < 0.015;
+  // A shape with no size is a slip, unless the tool is the point.
+  if (drag.kind === "point" || !tiny) {
+    const round = (v) => Math.round(v * 1000) / 1000;
+    entry(current).marks.push({ ...drag, x1: round(drag.x1), y1: round(drag.y1), x2: round(drag.x2), y2: round(drag.y2) });
+    markDirty();
+  }
+  drag = null;
+  renderMarks();
+  refreshGrid();
+  $("#marks .row:last-child input")?.focus();
+});
+
+// ---- suggestions --------------------------------------------------------------
+function renderIdeas() {
+  $("#idea-list").replaceChildren(...state.ideas.map((idea, i) => {
+    const row = document.createElement("div");
+    row.className = "idea";
+    const body = document.createElement("div");
+    body.append(text("p", "", idea.text));
+    if (idea.ref) { const a = text("a", "", idea.ref); a.href = idea.ref; a.target = "_blank"; a.rel = "noreferrer"; body.append(a); }
+    if (idea.image) { const im = document.createElement("img"); im.src = `/ref/${idea.image}`; im.alt = ""; body.append(im); }
+    const del = document.createElement("button");
+    del.innerHTML = X; del.setAttribute("aria-label", `Delete suggestion ${i + 1}`); del.title = `Delete suggestion ${i + 1}`;
+    del.addEventListener("click", () => { state.ideas.splice(i, 1); renderIdeas(); refreshGrid(); markDirty(); });
+    row.append(body, del);
+    return row;
+  }));
+}
+async function addIdea() {
+  const value = $("#idea-text").value.trim(), ref = $("#idea-ref").value.trim(), file = $("#idea-img").files[0];
+  if (!value && !ref && !file) return;
+  let image = "";
+  if (file) {
+    const res = await fetch("/api/ref", { method: "POST", headers: { "Content-Type": file.type }, body: file }).catch(() => null);
+    if (res?.ok) image = (await res.json()).file;
+  }
+  // Only http(s) links become clickable references; anything else stays in the text.
+  const link = /^https?:\/\//.test(ref) ? ref : "";
+  state.ideas.push({ text: link || !ref ? value : `${value}\n${ref}`.trim(), ref: link, image, at: new Date().toISOString() });
+  $("#idea-text").value = ""; $("#idea-ref").value = ""; $("#idea-img").value = "";
+  renderIdeas(); refreshGrid(); markDirty();
+}
+
+// ---- compare: one type side by side as the smallest avatar, 20 px round ------------
+const STAR = '<svg class="i" viewBox="0 0 24 24"><path d="M12 3l2.700 5.800 6.300.700-4.700 4.300 1.300 6.200L12 16.900 6.400 20l1.300-6.200L3 9.500l6.300-.700z"/></svg>';
+const CROWN = '<svg class="i" viewBox="0 0 24 24"><path d="M8 4h8v5a4 4 0 0 1-8 0zM8 6H4c0 3 1.500 5 4 5M16 6h4c0 3-1.500 5-4 5M12 13v4M8 20h8M9.500 17h5"/></svg>';
+const TYPES = Object.keys(MANIFEST.types ?? {});
+// Every type has its finalist but the winner is still open.
+const winnerWaits = () => TYPES.length > 0 && TYPES.every((t) => state.picks[t] || state.dropped.includes(t)) && Object.keys(state.picks).length > 0 && !state.winner;
+function buildTypes() {
+  const buttons = TYPES.map((t) => `<button data-type="${t}" aria-pressed="false" aria-label="Compare the ${MANIFEST.types[t]} variants" title="${MANIFEST.types[t]}">${t}</button>`).join("") +
+    `<button data-type="*" aria-pressed="false" aria-label="Compare the picked finalists" title="Picked finalists">${STAR}</button>`;
+  $("#types").innerHTML = buttons;
+  $("#cmp-types").innerHTML = buttons;
+}
+function refreshTypes() {
+  for (const b of document.querySelectorAll("[data-type]")) {
+    const t = b.dataset.type, has = t === "*" ? Boolean(state.winner) : Boolean(state.picks[t]);
+    if (has) b.dataset.picked = "1"; else delete b.dataset.picked;
+    b.setAttribute("aria-pressed", String(t === cmpType));
+    if (t === "*") {
+      b.disabled = Object.keys(state.picks).length === 0;
+      if (winnerWaits()) b.dataset.pending = "1"; else delete b.dataset.pending;
+    }
+  }
+}
+// The 20 px avatar, drawn once at 20 px and shown enlarged pixel for pixel: what a 20 px circle really holds.
+function tiny(canvas, src) {
+  const img = new Image();
+  img.onload = () => { const g = canvas.getContext("2d"); g.imageSmoothingQuality = "high"; g.drawImage(img, 0, 0, 20, 20); };
+  img.src = src;
+}
+function column(src, name, key, final = false) {
+  const col = document.createElement("div");
+  col.className = key ? "col" : "col before";
+  if (key) col.dataset.key = key;
+  const sizes = (cls) => `<div class="sizes ${cls}"><img class="${cls ? "" : "real"}" src="${src}" width="20" height="20" alt=""><img src="${src}" width="32" height="32" alt=""><img src="${src}" width="48" height="48" alt=""></div>`;
+  col.innerHTML = `<div class="foot"><span class="name">${name}</span>${key ? `<button class="pick${final ? " crown" : ""}" aria-pressed="false" aria-label="${final ? "Winner:" : "Pick"} ${name}" title="${final ? "Winner:" : "Pick"} ${name}">${final ? CROWN : STAR}</button>` : ""}</div>` +
+    `<img class="full" src="${src}" alt=""><canvas width="20" height="20" aria-label="${name} as a 20 px round avatar, enlarged"></canvas><div class="foot">${sizes("")}${sizes("dark")}</div>`;
+  tiny($("canvas", col), src);
+  return col;
+}
+function renderCompare() {
+  const cols = $("#cmp-cols");
+  cols.textContent = "";
+  if (cmpType === "*") {
+    for (const t of TYPES) if (state.picks[t]) cols.append(column(`/img/${state.picks[t]}.png`, state.picks[t].split("/")[1].slice(0, 2), state.picks[t], true));
+  } else {
+    const keys = KEYS.filter((k) => k.split("/")[1][0] === cmpType);
+    // The finalists of the round before, for comparison only.
+    const prev = MANIFEST.round - 1, before = new Set();
+    for (const k of keys) for (const stp of past.steps[k.split("/")[1].slice(0, 2)] ?? []) if (stp.round === prev) before.add(stp.id);
+    for (const id of [...before].sort()) cols.append(column(`/old/${prev}/${id}-c.png`, `${prev} · ${id}`, null));
+    // Two tools may draw the same id: name the tool when it is not the first one.
+    for (const k of keys) cols.append(column(`/img/${k}.png`, k.split("/")[1].slice(0, 2) + (k.startsWith(TOOLS[0] + "/") ? "" : ` ${k.split("/")[0]}`), k));
+  }
+  const chosen = cmpType === "*" ? state.winner : state.picks[cmpType];
+  for (const col of cols.querySelectorAll(".col[data-key]")) {
+    const on = col.dataset.key === chosen;
+    if (on) col.dataset.picked = "1"; else delete col.dataset.picked;
+    $(".pick", col).setAttribute("aria-pressed", String(on));
+  }
+  refreshTypes();
+}
+function pick(key) {
+  if (cmpType === "*") state.winner = state.winner === key ? null : key; // second tap clears it
+  else if (state.picks[cmpType] === key) { delete state.picks[cmpType]; if (state.winner === key) state.winner = null; }
+  else {
+    if (state.winner === state.picks[cmpType]) state.winner = null;
+    state.picks[cmpType] = key;
+    if (winnerWaits()) cmpType = "*"; // the last type is picked: go straight on to the winner
+  }
+  renderCompare(); markDirty();
+}
+
+// ---- share: the line-up on screen as one picture, to paste into a chat ----------------
+// Per logo: its letter, the logo big, its 20 px round avatar enlarged pixel for pixel, and the avatar at
+// 64, 48, 32 and 20 px on a dark and a light strip.
+const SHARE = { pad: 28, col: 384, label: 76, zoom: 240, strip: 84 };
+window.sharePicture = async () => {
+  const cols = [...document.querySelectorAll("#cmp-cols .col")];
+  const { pad, col, label, zoom, strip } = SHARE;
+  const zoomTop = label + col + pad, stripTop = zoomTop + zoom + pad;
+  const canvas = document.createElement("canvas");
+  canvas.width = pad + cols.length * (col + pad);
+  canvas.height = stripTop + 2 * (strip + 12) + pad;
+  window.shareLayout = { ...SHARE, zoomTop, count: cols.length };
+  const g = canvas.getContext("2d");
+  g.fillStyle = "#3a3532"; g.fillRect(0, 0, canvas.width, canvas.height);
+  g.imageSmoothingQuality = "high";
+  const round = (img, x, y, size) => { g.save(); g.beginPath(); g.arc(x + size / 2, y + size / 2, size / 2, 0, 2 * Math.PI); g.clip(); g.drawImage(img, x, y, size, size); g.restore(); };
+  for (const [i, c] of cols.entries()) {
+    const x = pad + i * (col + pad), img = $("img.full", c);
+    await img.decode();
+    g.fillStyle = "#ffffff"; g.font = "600 52px system-ui, sans-serif"; g.textAlign = "center"; g.textBaseline = "middle";
+    // In the final line-up one letter per logo is enough to vote with; elsewhere the id tells the variants apart.
+    g.fillText(cmpType === "*" ? $(".name", c).textContent[0] : $(".name", c).textContent, x + col / 2, label / 2);
+    g.drawImage(img, x, label, col, col);
+    g.imageSmoothingEnabled = false;
+    round($("canvas", c), x + (col - zoom) / 2, zoomTop, zoom);
+    g.imageSmoothingEnabled = true;
+    for (const [row, bg] of ["#313338", "#f6f4f3"].entries()) {
+      const y = stripTop + row * (strip + 12);
+      g.fillStyle = bg; g.beginPath(); g.roundRect(x, y, col, strip, 14); g.fill();
+      let cx = x + 40;
+      for (const size of [64, 48, 32, 20]) { round(img, cx, y + (strip - size) / 2, size); cx += size + 36; }
+    }
+  }
+  return new Promise((done) => canvas.toBlob(done, "image/png"));
+};
+// Every logo of the round as one picture, for people to vote on. The manifest may group the ids into
+// numbered categories (round 13: 1 the K U / H Y block, 2 the single K, 3 the long kuhy); otherwise one
+// category per type. Per logo: its label, the logo, its 20 px round avatar enlarged pixel for pixel and at real size.
+window.galleryPicture = async () => {
+  const groups = MANIFEST.groups ?? TYPES.map((t) => ({ title: t, ids: MANIFEST.ids.filter((id) => id[0] === t) }));
+  const sections = groups.map((grp) => ({ title: grp.title, keys: grp.ids.flatMap((id) => TOOLS.filter((t) => !skips(t).includes(id)).map((t) => `${t}/${id}-c`)) })).filter((sec) => sec.keys.length);
+  const pad = 24, logo = 200, zoom = 100, label = 40, cell = logo + 12 + zoom, rowH = label + logo, head = 90, perRow = 7;
+  // Small categories share a row; a big one takes rows of its own.
+  const rows = [];
+  for (const sec of sections) {
+    const last = rows.at(-1);
+    if (last && last.used + sec.keys.length + 1 <= perRow && sec.keys.length < perRow) { last.parts.push({ sec, keys: sec.keys, first: true, at: last.used + 1 }); last.used += sec.keys.length + 1; continue; }
+    for (let i = 0; i < sec.keys.length; i += perRow) { const keys = sec.keys.slice(i, i + perRow); rows.push({ parts: [{ sec, keys, first: i === 0, at: 0 }], used: keys.length }); }
+  }
+  const canvas = document.createElement("canvas");
+  canvas.width = head + perRow * (cell + pad) + pad;
+  canvas.height = pad + rows.length * (rowH + pad);
+  const g = canvas.getContext("2d");
+  g.fillStyle = "#3a3532"; g.fillRect(0, 0, canvas.width, canvas.height);
+  g.imageSmoothingQuality = "high"; g.textBaseline = "middle";
+  const load = (src) => new Promise((ok, fail) => { const i = new Image(); i.onload = () => ok(i); i.onerror = fail; i.src = src; });
+  const round = (img, x, y, size) => { g.save(); g.beginPath(); g.arc(x + size / 2, y + size / 2, size / 2, 0, 2 * Math.PI); g.clip(); g.drawImage(img, x, y, size, size); g.restore(); };
+  let cells = 0;
+  for (const [r, row] of rows.entries()) {
+    const y = pad + r * (rowH + pad);
+    for (const part of row.parts) {
+      const x0 = head + part.at * (cell + pad);
+      if (part.first) {
+        g.fillStyle = "#e0bc6e"; g.font = "700 72px system-ui, sans-serif"; g.textAlign = "center";
+        g.fillText(part.sec.title, part.at === 0 ? head / 2 : x0 - (cell + pad) / 2 + pad, y + label + logo / 2);
+      }
+      for (const [i, key] of part.keys.entries()) {
+        const x = x0 + pad + i * (cell + pad), [tool, name] = key.split("/"), img = await load(`/img/${key}.png`);
+        g.fillStyle = "#ffffff"; g.font = "600 26px system-ui, sans-serif"; g.textAlign = "left";
+        g.fillText(name.slice(0, 2) + (tool === TOOLS[0] ? "" : ` ${tool}`), x, y + label / 2);
+        g.drawImage(img, x, y + label, logo, logo);
+        const tiny = new OffscreenCanvas(20, 20), tg = tiny.getContext("2d");
+        tg.imageSmoothingQuality = "high"; tg.drawImage(img, 0, 0, 20, 20);
+        g.imageSmoothingEnabled = false; round(tiny, x + logo + 12, y + label, zoom); g.imageSmoothingEnabled = true;
+        let cx = x + logo + 12;
+        for (const size of [20, 32]) { round(img, cx, y + label + zoom + 24 + (32 - size) / 2, size); cx += size + 16; }
+        cells += 1;
+      }
+    }
+  }
+  window.galleryLayout = { cells, sections: sections.map((sec) => sec.title), sizes: sections.map((sec) => sec.keys.length) };
+  return new Promise((done) => canvas.toBlob(done, "image/png"));
+};
+async function copyPicture(button, picture) {
+  const made = picture(); // start now: browsers want the copy to begin inside the click
+  try {
+    if (!navigator.clipboard?.write) throw new Error("no picture clipboard here");
+    await navigator.clipboard.write([new ClipboardItem({ "image/png": made })]);
+    button.dataset.done = "1";
+  } catch {
+    // No picture clipboard (a phone on plain http, an old browser): hand the picture over another way.
+    const blob = await made.catch(() => null);
+    if (!blob) button.dataset.done = "0";
+    else {
+      const file = new File([blob], "logos.png", { type: "image/png" });
+      const shared = navigator.canShare?.({ files: [file] }) ? await navigator.share({ files: [file] }).then(() => true, () => false) : false;
+      if (shared) button.dataset.done = "1";
+      else {
+        // Last resort: show it, to press and hold (copy, share or save from the browser's own menu).
+        const img = $("#pic img");
+        if (img.src) URL.revokeObjectURL(img.src);
+        img.src = URL.createObjectURL(blob);
+        $("#pic").showModal();
+      }
+    }
+  }
+  setTimeout(() => delete button.dataset.done, 2500);
+}
+
+// ---- wiring -------------------------------------------------------------------
+document.addEventListener("click", (ev) => {
+  const t = ev.target.closest("button");
+  if (!t) return;
+  if (t.classList.contains("tile")) open(t.dataset.key);
+  else if (t.dataset.type) { cmpType = t.dataset.type; renderCompare(); if (!$("#cmp").open) $("#cmp").showModal(); }
+  else if (t.classList.contains("pick")) pick(t.closest(".col").dataset.key);
+  else if (t.id === "cmp-close") $("#cmp").close();
+  else if (t.id === "cmp-copy") copyPicture(t, window.sharePicture);
+  else if (t.id === "grid-copy") copyPicture(t, window.galleryPicture);
+  else if (t.dataset.filter) { filterTool = t.dataset.filter; press("data-filter", filterTool); refreshGrid(); }
+  else if (t.dataset.show) { filterShow = t.dataset.show; press("data-show", filterShow); refreshGrid(); }
+  else if (t.dataset.tool) { tool = t.dataset.tool; press("data-tool", tool); }
+  else if (t.dataset.like) { like = t.dataset.like === "1"; press("data-like", t.dataset.like); }
+  else if (t.dataset.verdict) {
+    const e = entry(current);
+    e.verdict = e.verdict === t.dataset.verdict ? null : t.dataset.verdict; // second tap clears it
+    renderMarks(); refreshGrid(); markDirty();
+  }
+  else if (t.id === "prev") step(-1);
+  else if (t.id === "next") step(1);
+  else if (t.id === "close") $("#dlg").close();
+  else if (t.id === "hist-toggle") {
+    const on = $("#contexts").dataset.view !== "history";
+    $("#contexts").dataset.view = on ? "history" : "previews";
+    t.setAttribute("aria-pressed", String(on));
+    fit();
+  }
+  else if (t.id === "send") sendQuestion();
+  else if (t.id === "ideas-open") { renderIdeas(); $("#ideas").showModal(); }
+  else if (t.id === "ideas-close") $("#ideas").close();
+  else if (t.id === "phone-open") { $("#phone img").src = "/phone.svg"; $("#phone").showModal(); }
+  else if (t.id === "phone-close") $("#phone").close();
+  else if (t.id === "pic-close") $("#pic").close();
+  else if (t.id === "idea-add") addIdea();
+});
+// The grid is hidden while a logo is open; put the page back where it was.
+$("#dlg").addEventListener("close", () => scrollTo(0, pageScroll));
+$("#cmp").addEventListener("close", () => { cmpType = null; refreshTypes(); });
+$("#note").addEventListener("input", () => { entry(current).note = $("#note").value; markDirty(); });
+$("#ask").addEventListener("keydown", (ev) => { if (ev.key === "Enter" && (ev.ctrlKey || ev.metaKey)) sendQuestion(); });
+$("#dlg").addEventListener("keydown", (ev) => {
+  if (ev.target.matches("input, textarea")) return;
+  if (ev.key === "ArrowLeft") step(-1);
+  if (ev.key === "ArrowRight") step(1);
+});
+
+buildGrid();
+buildTypes();
+const loaded = await (await fetch("/api/state")).json();
+state = { logos: loaded.logos ?? {}, ideas: loaded.ideas ?? [], picks: loaded.picks ?? {}, winner: loaded.winner ?? null, dropped: loaded.dropped ?? [] }; // dropped: types kuhy took out of the final
+await loadClaude();
+past = await (await fetch("/api/history")).json().catch(() => past);
+refreshGrid();
+refreshTypes();
+// Only this computer is told the phone link; a phone gets a refusal and never sees the button.
+fetch("/api/phone").then((r) => r.json()).then((phone) => { $("#phone-open").hidden = !phone.url; }).catch(() => {});
+if (winnerWaits()) { cmpType = "*"; renderCompare(); $("#cmp").showModal(); }
+</script>
+</body>
+</html>
