@@ -25,7 +25,8 @@ designer writes between turns: answers.json. Neither side overwrites the other.
   GET  /api/phone               this computer only: {"url": the link that opens the tool on a phone, or null}
   GET  /phone.svg               this computer only: that link as a QR code
 
-With --lan the server listens on every interface. This computer needs no key. Any other device must open
+With --lan the server listens on every interface. This computer's own browser (loopback peer and a
+loopback Host header with this port) needs no key; a request a reverse proxy forwards does. Any other device must open
 /?k=<key> once (the QR code holds it); the key then lives in a cookie. The key is in <data>/lan-token.
 
 Run: python3 server.py --project <dir> [--data <dir>] [--port 8793] [--lan]
@@ -128,7 +129,17 @@ def make_handler(project: Project, data: Path, *, lan: bool = False, lan_url: st
             return self.client_address[0]
 
         def _local(self) -> bool:
-            return ipaddress.ip_address(self.peer().removeprefix("::ffff:")).is_loopback
+            """This computer's own browser: a loopback peer AND a loopback Host with this server's port.
+
+            The peer alone is not enough: a reverse proxy on this computer connects from 127.0.0.1 for every
+            visitor, and forwarding headers are written by whoever sends the request. The proxy passes the
+            visitor's Host through, so that is the signal; it also stops DNS rebinding.
+            """
+            if not ipaddress.ip_address(self.peer().removeprefix("::ffff:")).is_loopback:
+                return False
+            hosts = self.headers.get_all("Host") or []
+            port = self.server.server_address[1]
+            return len(hosts) == 1 and hosts[0].strip().lower() in {f"127.0.0.1:{port}", f"localhost:{port}", f"[::1]:{port}"}
 
         def _send(self, code: int, body: bytes = b"", kind: str = "text/plain", extra: dict[str, str] | None = None) -> None:
             self.send_response(code)

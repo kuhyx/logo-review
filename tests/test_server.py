@@ -100,3 +100,26 @@ def test_another_device_needs_the_key(project: Path, tmp_path: Path) -> None:
     assert get(httpd, "/api/state", {"Cookie": cookie})[0] == 200
     assert get(httpd, "/api/phone", {"Cookie": cookie})[0] == 403, "only this computer hands out the phone link"
     assert get(httpd, "/phone.svg", {"Cookie": cookie})[0] == 403
+
+
+def test_a_request_forwarded_by_a_proxy_on_this_computer_is_not_local(project: Path, tmp_path: Path) -> None:
+    """A reverse proxy on this computer connects from 127.0.0.1 for every visitor. Only the Host header tells the
+    PC's own browser (127.0.0.1:<port>, localhost:<port>) from the internet, so anything else needs the key."""
+    httpd = serve(project, tmp_path / "state", lan=True)
+    port = httpd.server_address[1]
+    token = (tmp_path / "state/lan-token").read_text().strip()
+    for host in ("logos.kuhy.duckdns.org", "evil.com", "127.0.0.1", f"127.0.0.1:{port + 1}", f"192.168.1.43:{port}"):
+        assert get(httpd, "/", {"Host": host})[0] == 403, host
+        assert get(httpd, "/api/phone", {"Host": host})[0] == 403, host
+    for host in (f"127.0.0.1:{port}", f"localhost:{port}", f"LOCALHOST:{port}", f"[::1]:{port}"):
+        assert get(httpd, "/", {"Host": host})[0] == 200, host
+    status, _, headers = get(httpd, f"/?k={token}", {"Host": "logos.kuhy.duckdns.org"})
+    assert status == 303
+    cookie = headers["Set-Cookie"].split(";")[0]
+    assert get(httpd, "/api/state", {"Host": "logos.kuhy.duckdns.org", "Cookie": cookie})[0] == 200
+    assert get(httpd, "/api/phone", {"Host": "logos.kuhy.duckdns.org", "Cookie": cookie})[0] == 403
+
+
+def test_without_lan_a_forwarded_request_is_refused(project: Path, tmp_path: Path) -> None:
+    httpd = serve(project, tmp_path / "state", lan=False)
+    assert get(httpd, "/", {"Host": "logos.kuhy.duckdns.org"})[0] == 403
