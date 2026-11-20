@@ -21,6 +21,7 @@ designer writes between turns: answers.json. Neither side overwrites the other.
   GET  /api/history             each design's earlier rounds + the archived reviews
   GET  /api/claude              {"rationale": ..., "answers": ...}
   POST /api/ref                 upload a reference picture (image/*, <= 5 MB) -> {"file": name}
+  GET  /services/<id>.svg|png  a service's logo (services.py), for the 14 known ids only
   GET  /ref/<name>              an uploaded reference picture
   GET  /api/phone               this computer only: {"url": the link that opens the tool on a phone, or null}
   GET  /phone.svg               this computer only: that link as a QR code
@@ -54,6 +55,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, urlsplit
 
+import services
 from pairing import Devices, PairCodes
 
 HERE = Path(__file__).resolve().parent
@@ -62,6 +64,8 @@ MAX_REF = 5 * 1024 * 1024
 MAX_ERROR = 64 * 1024
 IMG_RE = re.compile(r"^/img/([a-z]+)/([A-Z][1-9]-[mc])\.png$")
 OLD_RE = re.compile(r"^/old/(\d{1,2})/([A-Za-z][0-9](?:-[mc])?)\.png$")
+SERVICE_RE = re.compile(r"^/services/([a-z]+)\.(svg|png)$")
+SERVICE_TYPES = {"svg": "image/svg+xml", "png": "image/png"}
 REF_RE = re.compile(r"^/ref/([0-9a-f]{16}\.(png|jpeg|webp|gif))$")
 REF_TYPES = {"image/png": "png", "image/jpeg": "jpeg", "image/webp": "webp", "image/gif": "gif"}
 COOKIE = "k"
@@ -134,6 +138,7 @@ def make_handler(
     lan_url: str | None = None,
     public_url: str | None = None,
     errors: Path | None = None,
+    services_dir: Path = services.DIR,
 ) -> type[BaseHTTPRequestHandler]:
     state = data / "feedback.json"
     refs = data / "refs"
@@ -237,6 +242,10 @@ def make_handler(
             elif match := OLD_RE.match(path):
                 file = project.old_image(match[1], match[2])
                 self._send(200, file.read_bytes(), "image/png") if file and file.exists() else self._send(404)
+            elif match := SERVICE_RE.match(path):
+                # Only the known ids: the file name never comes from the request.
+                file = services_dir / f"{match[1]}.{match[2]}" if match[1] in services.IDS else None
+                self._send(200, file.read_bytes(), SERVICE_TYPES[match[2]]) if file and file.exists() else self._send(404)
             elif match := REF_RE.match(path):
                 file = refs / match[1]
                 self._send(200, file.read_bytes(), f"image/{match[2]}") if file.exists() else self._send(404)
@@ -313,11 +322,15 @@ def main() -> None:
     parser.add_argument("--lan", action="store_true", help="also serve other devices on the network, behind a key")
     parser.add_argument("--public", help="the https address a reverse proxy serves this tool at; devices need the key or pair with a code")
     parser.add_argument("--errors", type=Path, help="spool file for the app's error reports (see utils app_errors)")
+    parser.add_argument("--services-dir", type=Path, default=services.DIR, help="where the service logos are kept")
+    parser.add_argument("--services-source", default=services.CDN, help="the pinned CDN, or a file:// mirror (checks)")
     args = parser.parse_args()
+    # Fills in missing service logos while the server already answers; a page without them shows chips.
+    services.fetch_in_background(args.services_dir, services.check_source(args.services_source))
     address = lan_address() if args.lan else None
     lan_url = f"http://{address}:{args.port}/" if address else None
     public = args.public.rstrip("/") + "/" if args.public else None
-    handler = make_handler(Project(args.project), (args.data or args.project).resolve(), lan=args.lan, lan_url=lan_url, public_url=public, errors=args.errors)
+    handler = make_handler(Project(args.project), (args.data or args.project).resolve(), lan=args.lan, lan_url=lan_url, public_url=public, errors=args.errors, services_dir=args.services_dir)
     ThreadingHTTPServer(("0.0.0.0" if args.lan else "127.0.0.1", args.port), handler).serve_forever()
 
 

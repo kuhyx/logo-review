@@ -1,2 +1,7 @@
 __pycache__/
 .pytest_cache/
+
+# Brand marks stay out of the public repo; the server fetches them (services.py).
+assets/services/*.svg
+assets/services/*.png
+assets/services/.*.tmp

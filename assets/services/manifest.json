@@ -1,0 +1,104 @@
+{
+ "services": {
+  "discord": {
+   "hex": "5865F2",
+   "licence": "icon data CC0-1.0 (simple-icons 13.21.0); the mark is a trademark of its owner; guidelines: https://discord.com/branding",
+   "slug": "discord",
+   "title": "Discord",
+   "url": "https://cdn.jsdelivr.net/npm/simple-icons@13.21.0/icons/discord.svg"
+  },
+  "facebook": {
+   "hex": "0866FF",
+   "licence": "icon data CC0-1.0 (simple-icons 13.21.0); the mark is a trademark of its owner; guidelines: https://about.meta.com/brand/resources/facebook/logo",
+   "slug": "facebook",
+   "title": "Facebook",
+   "url": "https://cdn.jsdelivr.net/npm/simple-icons@13.21.0/icons/facebook.svg"
+  },
+  "github": {
+   "hex": "181717",
+   "licence": "icon data CC0-1.0 (simple-icons 13.21.0); the mark is a trademark of its owner; guidelines: https://github.com/logos",
+   "slug": "github",
+   "title": "GitHub",
+   "url": "https://cdn.jsdelivr.net/npm/simple-icons@13.21.0/icons/github.svg"
+  },
+  "gmail": {
+   "hex": "EA4335",
+   "licence": "icon data CC0-1.0 (simple-icons 13.21.0); the mark is a trademark of its owner; guidelines: none published",
+   "slug": "gmail",
+   "title": "Gmail",
+   "url": "https://cdn.jsdelivr.net/npm/simple-icons@13.21.0/icons/gmail.svg"
+  },
+  "instagram": {
+   "hex": "FF0069",
+   "licence": "icon data CC0-1.0 (simple-icons 13.21.0); the mark is a trademark of its owner; guidelines: https://about.meta.com/brand/resources/instagram",
+   "slug": "instagram",
+   "title": "Instagram",
+   "url": "https://cdn.jsdelivr.net/npm/simple-icons@13.21.0/icons/instagram.svg"
+  },
+  "linkedin": {
+   "hex": "0A66C2",
+   "licence": "icon data CC0-1.0 (simple-icons 13.21.0); the mark is a trademark of its owner; guidelines: https://brand.linkedin.com/policies",
+   "slug": "linkedin",
+   "title": "LinkedIn",
+   "url": "https://cdn.jsdelivr.net/npm/simple-icons@13.21.0/icons/linkedin.svg"
+  },
+  "reddit": {
+   "hex": "FF4500",
+   "licence": "icon data CC0-1.0 (simple-icons 13.21.0); the mark is a trademark of its owner; guidelines: https://www.redditinc.com/brand",
+   "slug": "reddit",
+   "title": "Reddit",
+   "url": "https://cdn.jsdelivr.net/npm/simple-icons@13.21.0/icons/reddit.svg"
+  },
+  "signal": {
+   "hex": "3B45FD",
+   "licence": "icon data CC0-1.0 (simple-icons 13.21.0); the mark is a trademark of its owner; guidelines: https://signal.org/brand",
+   "slug": "signal",
+   "title": "Signal",
+   "url": "https://cdn.jsdelivr.net/npm/simple-icons@13.21.0/icons/signal.svg"
+  },
+  "slack": {
+   "hex": "4A154B",
+   "licence": "icon data CC0-1.0 (simple-icons 13.21.0); the mark is a trademark of its owner; guidelines: https://slack.com/brand-guidelines",
+   "slug": "slack",
+   "title": "Slack",
+   "url": "https://cdn.jsdelivr.net/npm/simple-icons@13.21.0/icons/slack.svg"
+  },
+  "steam": {
+   "hex": "000000",
+   "licence": "icon data CC0-1.0 (simple-icons 13.21.0); the mark is a trademark of its owner; guidelines: https://partner.steamgames.com/doc/marketing/branding",
+   "slug": "steam",
+   "title": "Steam",
+   "url": "https://cdn.jsdelivr.net/npm/simple-icons@13.21.0/icons/steam.svg"
+  },
+  "telegram": {
+   "hex": "26A5E4",
+   "licence": "icon data CC0-1.0 (simple-icons 13.21.0); the mark is a trademark of its owner; guidelines: none published",
+   "slug": "telegram",
+   "title": "Telegram",
+   "url": "https://cdn.jsdelivr.net/npm/simple-icons@13.21.0/icons/telegram.svg"
+  },
+  "whatsapp": {
+   "hex": "25D366",
+   "licence": "icon data CC0-1.0 (simple-icons 13.21.0); the mark is a trademark of its owner; guidelines: https://about.meta.com/brand/resources/whatsapp/whatsapp-brand",
+   "slug": "whatsapp",
+   "title": "WhatsApp",
+   "url": "https://cdn.jsdelivr.net/npm/simple-icons@13.21.0/icons/whatsapp.svg"
+  },
+  "x": {
+   "hex": "000000",
+   "licence": "icon data CC0-1.0 (simple-icons 13.21.0); the mark is a trademark of its owner; guidelines: https://about.x.com/en/who-we-are/brand-toolkit",
+   "slug": "x",
+   "title": "X",
+   "url": "https://cdn.jsdelivr.net/npm/simple-icons@13.21.0/icons/x.svg"
+  },
+  "youtube": {
+   "hex": "FF0000",
+   "licence": "icon data CC0-1.0 (simple-icons 13.21.0); the mark is a trademark of its owner; guidelines: https://www.youtube.com/howyoutubeworks/resources/brand-resources/#logos-icons-and-colors",
+   "slug": "youtube",
+   "title": "YouTube",
+   "url": "https://cdn.jsdelivr.net/npm/simple-icons@13.21.0/icons/youtube.svg"
+  }
+ },
+ "source": "simple-icons",
+ "version": "13.21.0"
+}
