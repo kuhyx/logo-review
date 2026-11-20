@@ -4,7 +4,9 @@ library;
 
 import 'package:design_system/design_system.dart';
 import 'package:logo_review/controller.dart';
+import 'package:logo_review/ui/avatars.dart';
 import 'package:logo_review/ui/contexts_parts.dart';
+import 'package:logo_review/ui/service_badge.dart';
 import 'package:logo_review/ui/widgets.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -76,25 +78,7 @@ class _ContextsTabState extends State<ContextsTab> {
           crossAxisAlignment: CrossAxisAlignment.start,
           spacing: 6,
           children: [
-            Semantics(
-              label: a.name,
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                decoration: BoxDecoration(
-                  color: a.color,
-                  borderRadius: BorderRadius.circular(5),
-                ),
-                child: Text(
-                  a.chip,
-                  textScaler: TextScaler.noScaling,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ),
-            ),
+            ServiceBadge(pictures, a, dark: _dark),
             Row(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.end,

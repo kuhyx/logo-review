@@ -9,54 +9,6 @@ import 'package:logo_review/pictures.dart';
 import 'package:logo_review/ui/widgets.dart';
 import 'package:material_ui/material_ui.dart';
 
-/// One place a logo shows up as an avatar.
-typedef Avatar = ({
-  String chip,
-  String name,
-  Color color,
-  List<double> sizes,
-  double radius,
-});
-
-/// The avatar places, with each platform's real sizes.
-const List<Avatar> avatars = [
-  (
-    chip: 'in',
-    name: 'LinkedIn',
-    color: Color(0xFF0A66C2),
-    sizes: [200, 100, 48, 32],
-    radius: 0.5,
-  ),
-  (
-    chip: 'f',
-    name: 'Facebook',
-    color: Color(0xFF1877F2),
-    sizes: [168, 40, 32],
-    radius: 0.5,
-  ),
-  (
-    chip: 'D',
-    name: 'Discord',
-    color: Color(0xFF5865F2),
-    sizes: [80, 40, 32],
-    radius: 0.5,
-  ),
-  (
-    chip: 'GH',
-    name: 'GitHub',
-    color: Color(0xFF6E7781),
-    sizes: [260, 40, 20],
-    radius: 0.5,
-  ),
-  (
-    chip: '□',
-    name: 'Square app icon',
-    color: Color(0xFF70625B),
-    sizes: [180, 64, 32],
-    radius: 0.22,
-  ),
-];
-
 /// The colour in the picture's corner: the og card is filled with the logo's
 /// own background.
 Future<Color> cornerColor(Uint8List bytes) async {

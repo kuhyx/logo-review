@@ -12,6 +12,11 @@ What the tool does, and the five flows that must keep working. Each flow names t
 | 4 | Share a line-up, or every logo, as one picture | `app/test/flows_test.dart` ("share every logo ..."); page: `check-mobile.mjs` |
 | 5 | Suggest a new direction with a link and a reference picture | `app/test/flows_test.dart` ("ideas: ..."); server: `tests/test_server.py` |
 
+Service logos: each avatar place (14 services) wears the service's real mark as its frame badge, white on the dark
+preview, its chip when the server has no logo yet. `services.py` fetches them at server start from simple-icons
+(pinned version, one CDN host) into the gitignored `assets/services/`; `/services/<id>.svg|png` serves the 14 ids only.
+Checks: `tests/test_services.py`, `check.mjs` (fake local mirror, no network), `app/test/badge_test.dart`.
+
 Phone layout (nothing scrolls on a main screen, the keyboard covers nothing): `app/test/layout_test.dart`.
 
 ## Access

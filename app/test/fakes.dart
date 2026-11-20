@@ -88,6 +88,9 @@ class FakeServer {
   final refs = <String>[];
   final requests = <String>[];
 
+  /// Services whose logo the server has not fetched (404).
+  final missingLogos = <String>{};
+
   http.Client get client => MockClient(_handle);
 
   Future<http.Response> _handle(http.Request r) async {
@@ -127,6 +130,9 @@ class FakeServer {
       case '/api/error':
         errors.add(jsonDecode(r.body) as Map<String, dynamic>);
         return json({});
+    }
+    if (missingLogos.any((id) => path == '/services/$id.png')) {
+      return http.Response('', 404);
     }
     if (path.endsWith('missing.png')) return http.Response('', 404);
     if (path.endsWith('.png')) return http.Response.bytes(png, 200);
