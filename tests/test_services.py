@@ -5,15 +5,17 @@ from __future__ import annotations
 import json
 import os
 import struct
+import threading
 import zlib
+from http.server import ThreadingHTTPServer
 from pathlib import Path
 
-import pytest
-
 import fake_icons
+import pytest
+from test_server import get, project, serve  # noqa: F401 (pytest fixture)
+
 import server
 import services
-from test_server import get, project, serve  # noqa: F401 (pytest fixture)
 
 TWO = ("signal", "discord")
 
@@ -127,9 +129,6 @@ def test_the_server_serves_known_ids_only(project: Path, tmp_path: Path, source:
     services.fetch_all(dest, base=source, ids=("signal",), chromium=None)
     (tmp_path / "secret.svg").write_text("<svg/>")
     handler = server.make_handler(server.Project(project), tmp_path / "state", services_dir=dest)
-    from http.server import ThreadingHTTPServer
-    import threading
-
     httpd = ThreadingHTTPServer(("127.0.0.1", 0), handler)
     threading.Thread(target=httpd.serve_forever, daemon=True).start()
     status, body, headers = get(httpd, "/services/signal.svg")

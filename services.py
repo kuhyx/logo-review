@@ -65,7 +65,7 @@ def browser() -> str | None:
 
 
 def _get(url: str) -> bytes:
-    with urllib.request.urlopen(url, timeout=TIMEOUT) as res:  # noqa: S310 (check_source limits the scheme and host)
+    with urllib.request.urlopen(url, timeout=TIMEOUT) as res:
         return res.read()
 
 
@@ -91,11 +91,11 @@ def render_png(svg: Path, png: Path, chromium: str) -> None:
         page = Path(work) / "page.html"
         page.write_text(f'<!doctype html><style>html,body{{margin:0;background:transparent}}img{{display:block;width:{PNG_SIZE}px;height:{PNG_SIZE}px}}</style><img src="{svg.as_uri()}">')
         shot = Path(work) / "shot.png"
-        subprocess.run(  # noqa: S603 (fixed arguments)
+        subprocess.run(
             [chromium, "--headless=new", f"--user-data-dir={work}/profile", "--no-first-run", "--disable-gpu", "--hide-scrollbars",
              "--allow-file-access-from-files", "--default-background-color=00000000", f"--window-size={PNG_SIZE},{PNG_SIZE}",
              f"--screenshot={shot}", page.as_uri()],
-            capture_output=True, check=True, timeout=60, preexec_fn=lambda: os.nice(19),  # noqa: PLW1509 (no threads in the child)
+            capture_output=True, check=True, timeout=60, preexec_fn=lambda: os.nice(19),
         )  # fmt: skip
         _put(png, shot.read_bytes())
 
