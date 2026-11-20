@@ -9,7 +9,7 @@ set -euo pipefail
 HERE="$(cd "$(dirname "$0")/.." && pwd)"
 readonly HERE
 readonly CONFIG="${XDG_CONFIG_HOME:-$HOME/.config}/logo-review"
-readonly UNIT="logo-review"
+readonly UNIT="${LOGO_REVIEW_UNIT:-logo-review}"
 
 main() {
 	local project="${1:?usage: run.sh <project-dir> [port] [public-url]}" port="${2:-8793}" public="${3:-}"

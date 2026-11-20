@@ -1,6 +1,6 @@
 ## Commands
 
-- run: `scripts/run.sh <project-dir>`
+- run: `./run.sh [project-dir]` (server + desktop window; `scripts/run.sh <project-dir>` is the server alone)
 - test: `python3 -m pytest && scripts/check_app.sh`
 - e2e: `LOGO_REVIEW_PROJECT=<project-dir> ./run-check.sh check.mjs && LOGO_REVIEW_PROJECT=<project-dir> ./run-check.sh check-mobile.mjs`
 - deploy: `~/src/logo-review/scripts/deploy.sh` (server); `~/.claude/scripts/phone_deploy.sh ~/src/logo-review/app --release --stage <step>` (phone app)

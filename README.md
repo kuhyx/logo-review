@@ -11,8 +11,12 @@ One page to judge rounds of logo candidates, on a computer or a phone.
 ## Run
 
 ```
-scripts/run.sh <project-dir> [port] [public-url]     # default port 8793
+./run.sh [project-dir]                               # start it and open it in a window on this computer
+scripts/run.sh <project-dir> [port] [public-url]     # only the server; default port 8793
 ```
+
+`./run.sh` with no argument serves the project it served last. `./run.sh --no-open` starts the server
+without a window.
 
 This computer opens `http://127.0.0.1:8793/` with no key.
 
