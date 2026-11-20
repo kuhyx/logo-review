@@ -1,0 +1,21 @@
+# Local gates only: each is a script of this repo, so CI and a hand run agree.
+repos:
+  - repo: local
+    hooks:
+      - id: dependency-freshness
+        name: dependencies are newest stable
+        entry: scripts/check_dependency_freshness.sh --all
+        language: script
+        pass_filenames: false
+      - id: server-tests
+        name: server tests
+        entry: python3 -m pytest -q
+        language: system
+        pass_filenames: false
+        files: '\.py$'
+      - id: phone-app
+        name: phone app gate
+        entry: scripts/check_app.sh
+        language: script
+        pass_filenames: false
+        files: '^app/'

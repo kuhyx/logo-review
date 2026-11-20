@@ -1,0 +1,46 @@
+name: logo_review
+description: "Judge rounds of logo candidates from a phone: the app for the logo-review server."
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.13.2
+
+# Exact pins, newest stable (dependency-freshness rule).
+dependencies:
+  # Shared tokens, themes and FitGrid (the no-scroll paged grid).
+  design_system:
+    git:
+      url: https://github.com/kuhyx/utils
+      ref: design_system-v0.4.1
+      path: design_system
+  flutter:
+    sdk: flutter
+  # The device key opens the review tool, so it lives in the Android keystore.
+  flutter_secure_storage: 11.2.0
+  http: 1.6.0
+  # A reference picture for a suggestion, from the gallery.
+  image_picker: 1.2.4
+  # Flutter 3.50 moved Material out of the SDK; design_system builds on this.
+  material_ui: 1.11.1
+  # A place for the finished picture before it is shared.
+  path_provider: 2.1.6
+  # The finished line-up goes to a chat through the share sheet.
+  share_plus: 13.3.1
+
+dev_dependencies:
+  flutter_launcher_icons: 0.14.4
+  flutter_test:
+    sdk: flutter
+  very_good_analysis: ^11.0.0
+
+flutter:
+  uses-material-design: true
+
+flutter_launcher_icons:
+  android: true
+  ios: false
+  image_path: "assets/icon/icon.png"
+  adaptive_icon_background: "#211D1B"
+  adaptive_icon_foreground: "assets/icon/icon_foreground.png"
+  adaptive_icon_monochrome: "assets/icon/icon_monochrome.png"

@@ -1,0 +1,32 @@
+# The same shape as every other Flutter app of kuhy's -- see ~/todo. One lint
+# set across the ecosystem rather than per-repo drift, which is also why the
+# 80-character rule stays on for lib/ even though this repository's Python is
+# formatted at 100.
+include: package:very_good_analysis/analysis_options.yaml
+
+analyzer:
+  language:
+    strict-casts: true
+    strict-inference: true
+    strict-raw-types: true
+  errors:
+    # Promote key lints to errors so they fail the gate, not just warn.
+    missing_required_param: error
+    unnecessary_null_comparison: error
+    dead_code: error
+    invalid_annotation_target: error
+  exclude:
+    - build/**
+    - "**/*.g.dart"
+    # Tests are excluded here, as in every other app in the family: what
+    # matters for them -- that they exist and cover every line -- is gated by
+    # scripts/check_app.sh, not by line length.
+    - "test/**"
+    - android/**
+    - web/**
+
+linter:
+  rules:
+    always_use_package_imports: true
+    avoid_print: true
+    lines_longer_than_80_chars: true
