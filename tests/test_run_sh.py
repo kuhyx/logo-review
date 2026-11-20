@@ -25,7 +25,8 @@ def test_run_sh_starts_the_remembered_project_without_arguments(project: Path, t
     with socket.socket() as probe:
         probe.bind(("127.0.0.1", 0))
         port = probe.getsockname()[1]
-    env = {**os.environ, "XDG_CONFIG_HOME": str(tmp_path / "config"), "LOGO_REVIEW_UNIT": UNIT, "LOGO_REVIEW_PORT": str(port)}
+    env = {**os.environ, "XDG_CONFIG_HOME": str(tmp_path / "config"), "LOGO_REVIEW_UNIT": UNIT, "LOGO_REVIEW_PORT": str(port),
+           "LOGO_REVIEW_SERVICES_SOURCE": (tmp_path / "no-logos").as_uri()}  # fmt: skip
     try:
         none = run(env, "--no-open")
         assert none.returncode != 0 and "project" in none.stderr, "with nothing remembered it says what it needs"

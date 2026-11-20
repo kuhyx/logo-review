@@ -130,7 +130,7 @@
   .msg.kuhy.open { border-style: dashed; } /* asked, not answered yet */
   .send { display: grid; grid-template-columns: 1fr 40px; gap: 6px; align-items: end; }
   /* Context previews */
-  .panel { width: var(--pw, 780px); display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-end; padding: 16px; border-radius: 10px;
+  .panel { width: var(--pw, 780px); display: flex; flex-wrap: wrap; gap: 12px 16px; align-items: flex-end; padding: 16px; border-radius: 10px;
     border: 1px solid var(--border); }
   .panel[data-scheme="light"] { background: #f6f4f3; color: #211d1b; --line: #e0dad7; --ui: #fcfbfb; --ink: #70625b; }
   .panel[data-scheme="dark"] { background: #211d1b; color: #eceae9; --line: #463e3a; --ui: #2b2624; --ink: #aaa09a; }
@@ -141,6 +141,13 @@
   .ctx.square img { border-radius: 22%; }
   .chip { justify-self: start; min-width: 26px; height: 20px; padding: 0 6px; border-radius: 5px; color: #fff;
     font-size: 12px; font-weight: 700; line-height: 20px; text-align: center; }
+  /* The badge sits left of its sizes, not above them: 15 places stay one screen tall at 4K. */
+  .ctx:has(> .frame) { grid-template-columns: auto auto; column-gap: 6px; align-items: start; }
+  .frame { justify-self: start; display: flex; }
+  .frame .chip[hidden], .frame .badge[hidden] { display: none; }
+  .ctx img.badge { width: 20px; height: 20px; border-radius: 0; }
+  /* One file per service: brand colour on light, the same glyph white on dark. */
+  .panel[data-scheme="dark"] img.badge { filter: brightness(0) invert(1); }
   .px { font-size: 11px; color: var(--ink); text-align: center; font-variant-numeric: tabular-nums; }
   .cell { display: grid; gap: 2px; justify-items: center; }
   .tabstrip { display: flex; gap: 10px; align-items: flex-end; }
@@ -412,18 +419,33 @@ function press(attr, value) {
 }
 
 // ---- context previews: the logo where people will really meet it --------------
+// Each service's own avatar sizes; chip colours of the first four predate the logos, the rest are simple-icons' hex.
+// The frame badge is the service's real logo (/services/<id>.svg, services.py); the chip shows until it loads,
+// and stays when there is none.
 const AVATARS = [
   { id: "linkedin", chip: "in", name: "LinkedIn", color: "#0a66c2", sizes: [200, 100, 48, 32], cls: "round" },
   { id: "facebook", chip: "f", name: "Facebook", color: "#1877f2", sizes: [168, 40, 32], cls: "round" },
   { id: "discord", chip: "D", name: "Discord", color: "#5865f2", sizes: [80, 40, 32], cls: "round" },
   { id: "github", chip: "GH", name: "GitHub", color: "#6e7781", sizes: [260, 40, 20], cls: "round" },
+  { id: "signal", chip: "S", name: "Signal", color: "#3b45fd", sizes: [96, 48, 28], cls: "round" },
+  { id: "steam", chip: "St", name: "Steam", color: "#000000", sizes: [184, 64, 32], cls: "square" },
+  { id: "whatsapp", chip: "W", name: "WhatsApp", color: "#25d366", sizes: [192, 49, 40], cls: "round" },
+  { id: "telegram", chip: "T", name: "Telegram", color: "#26a5e4", sizes: [160, 54, 42], cls: "round" },
+  { id: "instagram", chip: "IG", name: "Instagram", color: "#ff0069", sizes: [150, 56, 32], cls: "round" },
+  { id: "x", chip: "X", name: "X", color: "#000000", sizes: [200, 48, 32], cls: "round" },
+  { id: "reddit", chip: "R", name: "Reddit", color: "#ff4500", sizes: [80, 32, 24], cls: "round" },
+  { id: "youtube", chip: "YT", name: "YouTube", color: "#ff0000", sizes: [176, 36, 24], cls: "round" },
+  { id: "slack", chip: "Sl", name: "Slack", color: "#4a154b", sizes: [72, 36, 20], cls: "square" },
+  { id: "gmail", chip: "G", name: "Gmail", color: "#ea4335", sizes: [96, 40, 32], cls: "round" },
   { id: "square", chip: "□", name: "Square app icon and square avatar", color: "#70625b", sizes: [180, 64, 32], cls: "square" },
-];
+].map((a) => ({ logo: a.id !== "square", ...a }));
+// The badge: hidden until the logo has loaded (then the chip goes), removed if it never does (the chip stays).
+const badge = (a) => a.logo ? `<img class="badge" src="/services/${a.id}.svg" width="20" height="20" alt="" aria-label="${a.name}" hidden onload="this.hidden=false;this.nextElementSibling.hidden=true" onerror="this.remove()">` : "";
 function contextPanel(scheme, src) {
   const img = (px) => `<img src="${src}" width="${px}" height="${px}" alt="">`;
   const cell = (px) => `<span class="cell">${img(px)}<span class="px">${px}</span></span>`;
   const avatars = AVATARS.map((a) =>
-    `<div class="ctx ${a.cls}" data-ctx="${a.id}" title="${a.name}"><span class="chip" style="background:${a.color}" aria-label="${a.name}">${a.chip}</span><div class="row">${a.sizes.map(cell).join("")}</div></div>`).join("");
+    `<div class="ctx ${a.cls}" data-ctx="${a.id}" title="${a.name}"><span class="frame">${badge(a)}<span class="chip" style="background:${a.color}" aria-label="${a.name}">${a.chip}</span></span><div class="row">${a.sizes.map(cell).join("")}</div></div>`).join("");
   const tab = `<div class="ctx" data-ctx="tab" title="Browser tab and bookmark tile"><div class="tabstrip"><span class="tab">${img(16)}<span class="line"></span>${X.replace('class="i"', 'class="i" style="width:14px;height:14px"')}</span><span class="tab big">${img(32)}</span></div><span class="px">16 · 32</span></div>`;
   const header = (id, width, name) => `<div class="ctx" data-ctx="${id}" title="${name}"><div class="bar" style="width:${width}px">${img(28)}<span class="nav"></span><span class="nav"></span></div><span class="px">${width}</span></div>`;
   const og = `<div class="ctx" data-ctx="og" title="Link preview card (og:image, 1200 x 630)"><div><div class="card">${img(0).replace('width="0" height="0"', "")}</div><div class="cardfoot"><i></i><i></i></div></div><span class="px">1200 × 630</span></div>`;
@@ -459,16 +481,47 @@ function fit() {
     return;
   }
   const side = Math.round(Math.min(560, Math.max(300, W * 0.22)));
+  const box = $("#contexts"), inner = $("#ctx-inner");
+  const history = box.dataset.view === "history";
+  // Each layout of the previews (one or two columns of light/dark, panel width): its size at 100%.
+  const layouts = [];
+  if (!history) {
+    inner.style.zoom = 1;
+    for (const cols of [1, 2]) {
+      for (let pw = 780; pw <= 1900; pw += 80) {
+        inner.style.setProperty("--pw", `${pw}px`);
+        inner.style.width = `${cols * pw + (cols - 1) * gap}px`;
+        layouts.push({ cols, pw, w: inner.offsetWidth, h: inner.offsetHeight });
+      }
+    }
+  }
+  const pick = () => {
+    const bw = box.clientWidth, bh = box.clientHeight - 20; // 20: room for the scale readout
+    let best = null;
+    for (const { cols, pw, w, h } of layouts) {
+      const zoom = Math.min(1, bw / w, bh / h), fill = zoom * zoom * w * h;
+      if (!best || zoom > best.zoom + 0.001 || (zoom > best.zoom - 0.001 && fill > best.fill)) best = { zoom, cols, pw, fill };
+    }
+    return best;
+  };
+  let best = null;
   if (W / H >= 1.3) {
-    const stage = Math.floor(Math.min(H, (W - side - 2 * gap) * 0.5));
-    review.style.gridTemplate = `"stage ctx side" minmax(0, 1fr) / ${stage}px minmax(0, 1fr) ${side}px`;
+    // The big logo takes half of what the side panel leaves; a little less when that keeps the previews at 100%.
+    const shareOf = (share) => {
+      const stage = Math.floor(Math.min(H, (W - side - 2 * gap) * share));
+      review.style.gridTemplate = `"stage ctx side" minmax(0, 1fr) / ${stage}px minmax(0, 1fr) ${side}px`;
+      return history ? null : pick();
+    };
+    best = shareOf(0.5);
+    // Shrink the logo only when that wins the previews their real sizes; otherwise the logo keeps its half.
+    if (best && best.zoom < 1 && !([0.46, 0.42].some((share) => (best = shareOf(share)).zoom >= 1))) best = shareOf(0.5);
   } else {
     const stage = Math.floor(Math.min(W - side - gap, (H - gap) * 0.5));
     review.style.gridTemplate = `"stage side" ${stage}px "ctx ctx" minmax(0, 1fr) / ${stage}px minmax(0, 1fr)`;
+    if (!history) best = pick();
   }
-  const box = $("#contexts"), inner = $("#ctx-inner");
-  const bw = box.clientWidth, bh = box.clientHeight - 20; // 20: room for the scale readout
-  if (box.dataset.view === "history") {
+  if (history) {
+    const bw = box.clientWidth, bh = box.clientHeight - 20;
     // The history strip shrinks as one block to fit, like the previews.
     const strip = $("#history");
     strip.style.zoom = 1;
@@ -479,18 +532,6 @@ function fit() {
     strip.style.zoom = zoom;
     $("#ctx-scale").textContent = `${Math.round(zoom * 100)}%`;
     return;
-  }
-  let best = null;
-  inner.style.zoom = 1;
-  for (const cols of [1, 2]) {
-    for (let pw = 780; pw <= 1900; pw += 80) {
-      inner.style.setProperty("--pw", `${pw}px`);
-      inner.style.width = `${cols * pw + (cols - 1) * gap}px`;
-      const w = inner.offsetWidth, h = inner.offsetHeight;
-      const zoom = Math.min(1, bw / w, bh / h);
-      const fill = zoom * zoom * w * h;
-      if (!best || zoom > best.zoom + 0.001 || (zoom > best.zoom - 0.001 && fill > best.fill)) best = { zoom, cols, pw, fill };
-    }
   }
   inner.style.setProperty("--pw", `${best.pw}px`);
   inner.style.width = `${best.cols * best.pw + (best.cols - 1) * gap}px`;

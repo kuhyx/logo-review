@@ -29,6 +29,8 @@ async function target() {
 }
 
 const failures = [];
+// The saved state once `ok` holds for it, or after 4 s: a save is debounced, and the machine may be busy.
+const savedState = async (ok) => { let s; for (let i = 0; i < 40; i++) { s = await (await fetch(`${base}/api/state`)).json(); if (ok(s)) break; await sleep(100); } return s; };
 const expect = (ok, what) => { console.log(`${ok ? "PASS" : "FAIL"} ${what}`); if (!ok) failures.push(what); };
 
 try {
@@ -109,16 +111,14 @@ try {
   expect(cmp.fits && cmp.full, "the compare view fills the screen and does not scroll");
   await shot("review-compare.png");
   await click('#cmp .col[data-key="css/O2-c"] .pick');
-  await sleep(700);
-  expect((await (await fetch(`${base}/api/state`)).json()).picks?.O === "css/O2-c", "picking a variant saves it as that type's finalist");
+  expect((await savedState((s) => s.picks?.O === "css/O2-c")).picks?.O === "css/O2-c", "picking a variant saves it as that type's finalist");
   expect((await js(`document.querySelector('[data-type=O]').dataset.picked`)) === "1", "the type button shows that it has a pick");
   await click("#cmp-close");
   await click('[data-type="*"]');
   await sleep(700);
   expect((await js("[...document.querySelectorAll('#cmp .col')].map((c) => c.dataset.key).join()")) === "css/O2-c", "the star button lines up the picked finalists");
   await click('#cmp .col[data-key="css/O2-c"] .pick');
-  await sleep(700);
-  expect((await (await fetch(`${base}/api/state`)).json()).winner === "css/O2-c", "picking among the finalists saves the winner");
+  expect((await savedState((s) => s.winner === "css/O2-c")).winner === "css/O2-c", "picking among the finalists saves the winner");
   await shot("review-finalists.png");
   await click("#cmp-close");
 
@@ -126,7 +126,7 @@ try {
   await send("Browser.grantPermissions", { origin: base, permissions: ["clipboardReadWrite", "clipboardSanitizedWrite"] });
   await send("Emulation.setFocusEmulationEnabled", { enabled: true });
   await click("#grid-copy");
-  await sleep(2500);
+  for (let i = 0; i < 60 && (await js("document.querySelector('#grid-copy').dataset.done")) !== "1"; i++) await sleep(100);
   const whole = await js(`(async () => {
     const done = document.querySelector('#grid-copy').dataset.done;
     const items = await navigator.clipboard.read().catch(() => []);
@@ -199,6 +199,21 @@ try {
   // 2. Context previews: where the logo will really be shown.
   const ctx = (sel) => `document.querySelectorAll('#contexts ${sel}').length`;
   expect((await js(ctx("[data-scheme=light]"))) === 1 && (await js(ctx("[data-scheme=dark]"))) === 1, "contexts are shown on light and on dark");
+  const SERVICES = ["signal", "discord", "steam", "linkedin", "facebook", "github", "whatsapp", "telegram", "instagram", "x", "reddit", "youtube", "slack", "gmail"];
+  for (const name of SERVICES) expect((await js(ctx(`[data-ctx=${name}]`))) === 2, `service ${name} is a preview in both schemes`);
+  // The frame badge is the service's real logo (fake mirror: every service but gmail), the chip only where none is fetched.
+  await js("Promise.all([...document.querySelectorAll('#contexts img.badge')].map(i => i.decode().catch(() => {})))");
+  await sleep(300);
+  const badges = await js(`(() => { const out = {}; for (const el of document.querySelectorAll('#contexts [data-scheme] .ctx')) {
+    const b = el.querySelector('img.badge'), chip = el.querySelector('.chip'), scheme = el.closest('[data-scheme]').dataset.scheme;
+    out[scheme + '/' + el.dataset.ctx] = { logo: !!b && !b.hidden && b.naturalWidth > 0 && b.getAttribute('src') === '/services/' + el.dataset.ctx + '.svg',
+      chip: !!chip && !chip.hidden && chip.getClientRects().length > 0, filter: b ? getComputedStyle(b).filter : '' }; } return out; })()`);
+  const logos = SERVICES.filter((s) => s !== "gmail");
+  expect(logos.every((s) => badges[`light/${s}`].logo && !badges[`light/${s}`].chip && badges[`dark/${s}`].logo && !badges[`dark/${s}`].chip), "every fetched service shows its real logo as the frame badge, no chip");
+  expect(badges["light/gmail"].chip && !badges["light/gmail"].logo && badges["dark/gmail"].chip, "a service with no logo file keeps its chip");
+  expect(badges["light/square"].chip, "the square app icon keeps its chip");
+  expect(logos.every((s) => badges[`light/${s}`].filter === "none" && badges[`dark/${s}`].filter.includes("invert(1)")), "badges are brand colour on light, white on dark");
+  expect((await js("[...document.querySelectorAll('#contexts [data-ctx=signal] .row img')].every(i => i.getAttribute('src') === '/img/' + " + JSON.stringify(KEY) + " + '.png')")), "the candidate stays the avatar in a service's frame");
   for (const name of ["linkedin", "facebook", "discord", "github", "square", "tab", "header-desktop", "header-mobile", "og"]) {
     expect((await js(ctx(`[data-ctx=${name}]`))) === 2, `context ${name} is shown in both schemes`);
   }

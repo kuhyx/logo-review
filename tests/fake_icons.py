@@ -1,7 +1,8 @@
 """A stand-in for the simple-icons CDN: one plain shape per service, no brand marks.
 
 Used by the tests and by run-check.sh, so neither touches the network.
-Run: python3 tests/fake_icons.py <dir>    writes <dir>/icons/<slug>.svg for every service
+Run: python3 tests/fake_icons.py <dir> [--without <id>]   writes <dir>/icons/<slug>.svg for every service
+     (but <id>: the e2e check sees that service fall back to its chip)
 """
 
 from __future__ import annotations
@@ -29,4 +30,5 @@ def write(root: Path, ids: tuple[str, ...] = services.IDS) -> Path:
 
 
 if __name__ == "__main__":
-    write(Path(sys.argv[1]))
+    skip = sys.argv[3] if sys.argv[2:3] == ["--without"] else ""
+    write(Path(sys.argv[1]), tuple(sid for sid in services.IDS if sid != skip))

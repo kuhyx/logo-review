@@ -95,33 +95,48 @@ def render_png(svg: Path, png: Path, chromium: str) -> None:
             [chromium, "--headless=new", f"--user-data-dir={work}/profile", "--no-first-run", "--disable-gpu", "--hide-scrollbars",
              "--allow-file-access-from-files", "--default-background-color=00000000", f"--window-size={PNG_SIZE},{PNG_SIZE}",
              f"--screenshot={shot}", page.as_uri()],
-            capture_output=True, check=True, timeout=60,
+            capture_output=True, check=True, timeout=60, preexec_fn=lambda: os.nice(19),  # noqa: PLW1509 (no threads in the child)
         )  # fmt: skip
         _put(png, shot.read_bytes())
 
 
-def fetch_one(sid: str, dest: Path, base: str, chromium: str | None, entry: dict) -> bool:
-    """Fetch (or finish) one service; True when nothing is left to do for it."""
-    svg, png = dest / f"{sid}.svg", dest / f"{sid}.png"
+def fetch_svg(sid: str, dest: Path, base: str, entry: dict) -> bool:
+    """Fetch one service's SVG unless present; True when it is there."""
+    svg = dest / f"{sid}.svg"
     try:
         if not svg.exists():
             _put(svg, clean_svg(_get(f"{base}icons/{entry['slug']}.svg"), entry["hex"]))
-        if chromium and not png.exists():
-            render_png(svg, png, chromium)
-    except (OSError, ValueError, subprocess.SubprocessError):
+    except (OSError, ValueError):
+        return False
+    return True
+
+
+def render_missing(sid: str, dest: Path, chromium: str) -> bool:
+    """Render one service's PNG from its SVG unless present; True when it is there."""
+    png = dest / f"{sid}.png"
+    try:
+        if not png.exists():
+            render_png(dest / f"{sid}.svg", png, chromium)
+    except (OSError, subprocess.SubprocessError):
         return False
     return True
 
 
 def fetch_all(dest: Path = DIR, base: str = CDN, ids: tuple[str, ...] = IDS, chromium: str | None | bool = True) -> list[str]:
-    """Fetch every missing logo of `ids` into dest; returns the ids still missing. chromium=True: look one up."""
+    """Fetch every missing logo of `ids` into dest; returns the ids still missing. chromium=True: look one up.
+
+    Every SVG first (seconds), then the PNGs (a Chromium start each, ~3 s): the page's badges need only the SVGs.
+    """
     base = check_source(base)
     chromium = browser() if chromium is True else chromium or None
     entries = load_manifest()["services"]
     dest.mkdir(parents=True, exist_ok=True)
     with ThreadPoolExecutor(max_workers=4) as pool:
-        done = list(pool.map(lambda sid: fetch_one(sid, dest, base, chromium, entries[sid]), ids))
-    return [sid for sid, ok in zip(ids, done, strict=True) if not ok]
+        have = [sid for sid, ok in zip(ids, pool.map(lambda sid: fetch_svg(sid, dest, base, entries[sid]), ids), strict=True) if ok]
+    if chromium:
+        # One render at a time, at the lowest priority: the computer stays responsive while they run.
+        have = [sid for sid in have if render_missing(sid, dest, chromium)]
+    return [sid for sid in ids if sid not in have]
 
 
 def fetch_in_background(dest: Path = DIR, base: str = CDN) -> threading.Thread:
