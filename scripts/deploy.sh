@@ -15,7 +15,7 @@ main() {
 	fi
 	# shellcheck source=/dev/null
 	source "$ENV_FILE"
-	"$HERE/scripts/run.sh" "$PROJECT" "$PORT"
+	"$HERE/scripts/run.sh" "$PROJECT" "$PORT" "${PUBLIC:-}"
 }
 
 main "$@"

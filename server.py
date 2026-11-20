@@ -24,12 +24,17 @@ designer writes between turns: answers.json. Neither side overwrites the other.
   GET  /ref/<name>              an uploaded reference picture
   GET  /api/phone               this computer only: {"url": the link that opens the tool on a phone, or null}
   GET  /phone.svg               this computer only: that link as a QR code
+  POST /api/pair/code           this computer only: {"code": six digits} for an app to pair with (pairing.py)
+  POST /api/pair                anyone: {"code": ...} -> {"token": the device's own key}
+  POST /api/error               one app error report (JSON object, <= 64 KB), appended to the --errors spool
 
 With --lan the server listens on every interface. This computer's own browser (loopback peer and a
 loopback Host header with this port) needs no key; a request a reverse proxy forwards does. Any other device must open
 /?k=<key> once (the QR code holds it); the key then lives in a cookie. The key is in <data>/lan-token.
+With --public <url> the server stays on loopback, behind a reverse proxy at that address; the same key
+rule applies, and an app pairs with a code instead and then sends "Authorization: Bearer <its key>".
 
-Run: python3 server.py --project <dir> [--data <dir>] [--port 8793] [--lan]
+Run: python3 server.py --project <dir> [--data <dir>] [--port 8793] [--lan | --public <url>] [--errors <file>]
 """
 
 from __future__ import annotations
@@ -49,9 +54,12 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, urlsplit
 
+from pairing import Devices, PairCodes
+
 HERE = Path(__file__).resolve().parent
 MAX_STATE = 2 * 1024 * 1024
 MAX_REF = 5 * 1024 * 1024
+MAX_ERROR = 64 * 1024
 IMG_RE = re.compile(r"^/img/([a-z]+)/([A-Z][1-9]-[mc])\.png$")
 OLD_RE = re.compile(r"^/old/(\d{1,2})/([A-Za-z][0-9](?:-[mc])?)\.png$")
 REF_RE = re.compile(r"^/ref/([0-9a-f]{16}\.(png|jpeg|webp|gif))$")
@@ -118,11 +126,24 @@ def lan_address() -> str | None:
         probe.close()
 
 
-def make_handler(project: Project, data: Path, *, lan: bool = False, lan_url: str | None = None) -> type[BaseHTTPRequestHandler]:
+def make_handler(
+    project: Project,
+    data: Path,
+    *,
+    lan: bool = False,
+    lan_url: str | None = None,
+    public_url: str | None = None,
+    errors: Path | None = None,
+) -> type[BaseHTTPRequestHandler]:
     state = data / "feedback.json"
     refs = data / "refs"
-    token = lan_token(data) if lan else ""
-    phone_url = f"{lan_url}?k={token}" if lan and lan_url else None
+    shared = lan or public_url is not None
+    token = lan_token(data) if shared else ""
+    base = public_url or lan_url
+    phone_url = f"{base}?k={token}" if shared and base else None
+    secure = "; Secure" if (base or "").startswith("https://") else ""
+    codes = PairCodes()
+    devices = Devices(data / "devices.json")
 
     class Handler(BaseHTTPRequestHandler):
         def peer(self) -> str:
@@ -170,8 +191,11 @@ def make_handler(project: Project, data: Path, *, lan: bool = False, lan_url: st
             offered = parse_qs(url.query).get(COOKIE, [""])[0]
             if offered and hmac.compare_digest(offered, token) and url.path == "/":
                 # Keep the key out of the address bar and the history: set the cookie, then show the plain page.
-                self._send(303, extra={"Location": "/", "Set-Cookie": f"{COOKIE}={token}; Path=/; HttpOnly; SameSite=Strict; Max-Age=31536000"})
+                self._send(303, extra={"Location": "/", "Set-Cookie": f"{COOKIE}={token}; Path=/; HttpOnly; SameSite=Strict; Max-Age=31536000{secure}"})
                 return False
+            bearer = self.headers.get("Authorization", "").removeprefix("Bearer ")
+            if bearer and devices.check(bearer):
+                return True
             cookie = SimpleCookie(self.headers.get("Cookie", "")).get(COOKIE)
             if cookie is not None and hmac.compare_digest(cookie.value, token):
                 return True
@@ -237,8 +261,33 @@ def make_handler(project: Project, data: Path, *, lan: bool = False, lan_url: st
             os.replace(tmp, state)
             self._json({})
 
+        def _object(self, limit: int) -> dict | None:
+            try:
+                value = json.loads(self._body(limit) or b"")
+            except ValueError:
+                return None
+            return value if isinstance(value, dict) else None
+
         def do_POST(self) -> None:  # noqa: N802
+            if self.path == "/api/pair":
+                # Open to anyone: the code is the proof. PairCodes limits the guessing.
+                offer = (self._object(1024) or {}).get("code") if shared else None
+                self._json({"token": devices.add()}) if codes.redeem(offer) else self._send(403)
+                return
             if not self._allowed():
+                return
+            if self.path == "/api/pair/code":
+                self._json({"code": codes.mint()}) if self._local() and shared else self._send(403)
+                return
+            if self.path == "/api/error":
+                entry = self._object(MAX_ERROR)
+                if entry is None or errors is None:
+                    self._send(400)
+                    return
+                errors.parent.mkdir(parents=True, exist_ok=True)
+                with errors.open("a") as spool:
+                    spool.write(json.dumps(entry, ensure_ascii=False) + "\n")
+                self._json({})
                 return
             ext = REF_TYPES.get(self.headers.get("Content-Type", ""))
             body = self._body(MAX_REF) if self.path == "/api/ref" and ext else None
@@ -262,10 +311,13 @@ def main() -> None:
     parser.add_argument("--data", type=Path, help="where feedback.json, answers.json and refs/ live (default: the project)")
     parser.add_argument("--port", type=int, default=8793)
     parser.add_argument("--lan", action="store_true", help="also serve other devices on the network, behind a key")
+    parser.add_argument("--public", help="the https address a reverse proxy serves this tool at; devices need the key or pair with a code")
+    parser.add_argument("--errors", type=Path, help="spool file for the app's error reports (see utils app_errors)")
     args = parser.parse_args()
     address = lan_address() if args.lan else None
     lan_url = f"http://{address}:{args.port}/" if address else None
-    handler = make_handler(Project(args.project), (args.data or args.project).resolve(), lan=args.lan, lan_url=lan_url)
+    public = args.public.rstrip("/") + "/" if args.public else None
+    handler = make_handler(Project(args.project), (args.data or args.project).resolve(), lan=args.lan, lan_url=lan_url, public_url=public, errors=args.errors)
     ThreadingHTTPServer(("0.0.0.0" if args.lan else "127.0.0.1", args.port), handler).serve_forever()
 
 

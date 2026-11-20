@@ -200,6 +200,7 @@
   #overlay { touch-action: none; } /* a finger on the logo draws; it does not scroll the page */
   /* The phone link as a QR code (only this computer is offered it), and a finished picture to long-press. */
   #phone img { display: block; width: min(80vw, 70vh, 420px); aspect-ratio: 1; background: #fff; border-radius: 8px; }
+  #pair-code { display: block; margin-top: 8px; text-align: center; font: 700 44px/1.2 ui-monospace, monospace; letter-spacing: 0.2em; font-variant-numeric: tabular-nums; }
   #pic { width: 100vw; max-width: none; max-height: 100vh; margin: auto 0; border-radius: 0; padding: 8px; }
   #pic img { display: block; width: 100%; height: auto; margin-top: 8px; }
   /* A phone: thumb-sized buttons, two logos per row, and the opened logo as one column that scrolls down. */
@@ -303,7 +304,8 @@
 
 <dialog id="phone" aria-label="Scan to open on a phone">
   <div class="group"><svg class="i" viewBox="0 0 24 24"><rect x="7" y="3" width="10" height="18" rx="2"/><path d="M11 18h2"/></svg><button id="phone-close" aria-label="Close" title="Close" style="margin-left:auto"><svg class="i" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
-  <img alt="QR code with this tool's address on the local network" style="margin-top:8px">
+  <img alt="QR code with this tool's address for a phone browser" style="margin-top:8px">
+  <output id="pair-code" aria-label="Code to type into the phone app (works once, for five minutes)"></output>
 </dialog>
 
 <dialog id="pic" aria-label="The finished picture: press and hold it to copy or share">
@@ -907,7 +909,13 @@ document.addEventListener("click", (ev) => {
   else if (t.id === "send") sendQuestion();
   else if (t.id === "ideas-open") { renderIdeas(); $("#ideas").showModal(); }
   else if (t.id === "ideas-close") $("#ideas").close();
-  else if (t.id === "phone-open") { $("#phone img").src = "/phone.svg"; $("#phone").showModal(); }
+  else if (t.id === "phone-open") {
+    $("#phone img").src = "/phone.svg";
+    $("#pair-code").textContent = "";
+    $("#phone").showModal();
+    // A fresh code for the phone app on every opening.
+    fetch("/api/pair/code", { method: "POST" }).then((r) => r.json()).then((pair) => { $("#pair-code").textContent = pair.code; }).catch(() => {});
+  }
   else if (t.id === "phone-close") $("#phone").close();
   else if (t.id === "pic-close") $("#pic").close();
   else if (t.id === "idea-add") addIdea();
