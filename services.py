@@ -86,13 +86,17 @@ def clean_svg(raw: bytes, hex_colour: str) -> bytes:
 
 
 def render_png(svg: Path, png: Path, chromium: str) -> None:
-    """svg at 1024 x 1024 on transparent, through a throwaway headless Chromium profile."""
+    """svg at 1024 x 1024 on transparent, through a throwaway headless Chromium profile.
+
+    --no-sandbox: CI runners (Ubuntu 24.04) refuse Chromium's user-namespace sandbox. The page is ours and the
+    SVG is the one path clean_svg kept, so nothing untrusted runs in it.
+    """
     with tempfile.TemporaryDirectory(prefix="logo-render-") as work:
         page = Path(work) / "page.html"
         page.write_text(f'<!doctype html><style>html,body{{margin:0;background:transparent}}img{{display:block;width:{PNG_SIZE}px;height:{PNG_SIZE}px}}</style><img src="{svg.as_uri()}">')
         shot = Path(work) / "shot.png"
         subprocess.run(
-            [chromium, "--headless=new", f"--user-data-dir={work}/profile", "--no-first-run", "--disable-gpu", "--hide-scrollbars",
+            [chromium, "--headless=new", "--no-sandbox", f"--user-data-dir={work}/profile", "--no-first-run", "--disable-gpu", "--hide-scrollbars",
              "--allow-file-access-from-files", "--default-background-color=00000000", f"--window-size={PNG_SIZE},{PNG_SIZE}",
              f"--screenshot={shot}", page.as_uri()],
             capture_output=True, check=True, timeout=60, preexec_fn=lambda: os.nice(19),
