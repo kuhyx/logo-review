@@ -130,12 +130,12 @@ void main() {
       ),
     );
     await settle(tester);
-    expect(find.byType(KuhyCredit), findsOneWidget);
     expect(k('retry'), findsOneWidget);
     server.down = false;
     await tap(tester, 'retry');
     await settle(tester);
     expect(find.byType(LogoTile), findsNWidgets(4));
+    expect(find.byType(KuhyCredit), findsOneWidget);
     errors.report('it broke', null);
     await tester.pump();
     expect(find.text('it broke'), findsOneWidget);

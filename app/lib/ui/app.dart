@@ -4,7 +4,6 @@ library;
 import 'dart:async';
 
 import 'package:design_system/design_system.dart';
-import 'package:kuhy_credit/kuhy_credit.dart';
 import 'package:logo_review/controller.dart';
 import 'package:logo_review/errors.dart';
 import 'package:logo_review/ui/grid_page.dart';
@@ -53,11 +52,6 @@ class _LogoReviewAppState extends State<LogoReviewApp> {
       children: [
         ?child,
         if (widget.errors case final errors?) _ErrorBar(errors),
-        const Positioned(
-          right: AppSpacing.md,
-          bottom: AppSpacing.md,
-          child: KuhyCredit(),
-        ),
       ],
     ),
     home: ListenableBuilder(

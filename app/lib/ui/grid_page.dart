@@ -2,6 +2,7 @@
 library;
 
 import 'package:design_system/design_system.dart';
+import 'package:kuhy_credit/kuhy_credit.dart';
 import 'package:logo_review/controller.dart';
 import 'package:logo_review/logic.dart';
 import 'package:logo_review/ui/compare_page.dart';
@@ -113,6 +114,9 @@ class _GridPageState extends State<GridPage> {
                           onTap: () => _push(IdeasPage(c, widget.services)),
                         ),
                       ),
+                      gap,
+                      // The shared credit: logo only; a tap opens its panel.
+                      const KuhyCredit(size: 34, below: true),
                     ],
                   ),
                   Row(
