@@ -214,6 +214,9 @@ def make_handler(
             images = project.images
             if path == "/":
                 self._send(200, (HERE / "index.html").read_bytes(), "text/html; charset=utf-8")
+            elif path in ("/vendor/kuhy-credit/kuhy-credit.js", "/vendor/kuhy-credit/credit-data.js"):
+                # The shared credit web component, vendored by scripts/update_kuhy_credit.sh.
+                self._send(200, (HERE / path.lstrip("/")).read_bytes(), "text/javascript; charset=utf-8")
             elif path == "/api/state":
                 self._json(read_json(state, {"logos": {}, "ideas": []}))
             elif path == "/api/manifest":

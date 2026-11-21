@@ -1,6 +1,7 @@
 // Core flows 3-5: compare and pick, suggest, share; and failure states.
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:kuhy_credit/kuhy_credit.dart';
 import 'package:logo_review/errors.dart';
 import 'package:logo_review/ui/app.dart';
 import 'package:logo_review/ui/tile.dart';
@@ -129,6 +130,7 @@ void main() {
       ),
     );
     await settle(tester);
+    expect(find.byType(KuhyCredit), findsOneWidget);
     expect(k('retry'), findsOneWidget);
     server.down = false;
     await tap(tester, 'retry');

@@ -123,3 +123,11 @@ def test_a_request_forwarded_by_a_proxy_on_this_computer_is_not_local(project: P
 def test_without_lan_a_forwarded_request_is_refused(project: Path, tmp_path: Path) -> None:
     httpd = serve(project, tmp_path / "state", lan=False)
     assert get(httpd, "/", {"Host": "logos.kuhy.duckdns.org"})[0] == 403
+
+
+def test_the_kuhy_credit_script_is_served(project: Path, tmp_path: Path) -> None:
+    httpd = serve(project, tmp_path / "state", lan=False)
+    for name in ("kuhy-credit.js", "credit-data.js"):
+        status, body, headers = get(httpd, f"/vendor/kuhy-credit/{name}")
+        assert status == 200 and body and headers["Content-Type"].startswith("text/javascript")
+    assert get(httpd, "/vendor/kuhy-credit/x.js")[0] == 404
