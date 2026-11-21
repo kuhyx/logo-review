@@ -139,6 +139,22 @@ def test_the_server_serves_known_ids_only(project: Path, tmp_path: Path, source:
         assert get(httpd, path)[0] == 404, path
 
 
+def test_browser_skips_broken_wrappers_and_returns_none_when_all_bad(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    bad = tmp_path / "bad"
+    good = tmp_path / "good"
+    bad.mkdir()
+    good.mkdir()
+    (bad / "chromium").write_text("#!/bin/bash\necho 'exec: --: invalid option' >&2\n")
+    (good / "chromium").write_text("#!/bin/bash\necho 'Chromium 150.0.1'\n")
+    (bad / "chromium").chmod(0o755)
+    (good / "chromium").chmod(0o755)
+    monkeypatch.setenv("PATH", f"{bad}{os.pathsep}{good}")
+    import services
+    assert services.browser() == str(good / "chromium")
+    monkeypatch.setenv("PATH", str(bad))
+    assert services.browser() is None
+
+
 @pytest.mark.skipif(not os.environ.get("LOGO_REVIEW_NETWORK"), reason="network test: set LOGO_REVIEW_NETWORK=1")
 def test_the_real_urls_answer(tmp_path: Path) -> None:
     assert services.fetch_all(tmp_path, chromium=None) == []

@@ -59,9 +59,26 @@ def check_source(base: str) -> str:
     return base
 
 
+def _runs(path: str) -> bool:
+    try:
+        out = subprocess.run([path, "--version"], capture_output=True, text=True, timeout=20, check=False).stdout
+    except (OSError, subprocess.SubprocessError):
+        return False
+    return any(ch.isdigit() for ch in out) and "invalid option" not in out
+
+
 def browser() -> str | None:
-    """A Chromium to render PNGs with, if this computer has one."""
-    return next((path for name in ("chromium", "google-chrome-stable", "google-chrome") if (path := shutil.which(name))), None)
+    """A Chromium to render PNGs with, if this computer has one: the first on PATH whose --version works.
+
+    A wrapper earlier on PATH can be broken (exits 0 but prints an exec error), so the probe checks
+    that the output names a version, and walks every PATH entry rather than only the first match.
+    """
+    for name in ("chromium", "google-chrome-stable", "google-chrome"):
+        for folder in os.environ.get("PATH", "").split(os.pathsep):
+            path = shutil.which(name, path=folder)
+            if path and _runs(path):
+                return path
+    return None
 
 
 def _get(url: str) -> bytes:
