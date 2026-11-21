@@ -21,6 +21,12 @@ dependencies:
   http: 1.6.0
   # A reference picture for a suggestion, from the gallery.
   image_picker: 1.2.4
+  # Shared kuhy credit (M1 logo + panel).
+  kuhy_credit:
+    git:
+      url: https://github.com/kuhyx/utils
+      ref: kuhy-credit-v0.3.0
+      path: kuhy_credit/flutter
   # Flutter 3.50 moved Material out of the SDK; design_system builds on this.
   material_ui: 1.11.1
   # A place for the finished picture before it is shared.

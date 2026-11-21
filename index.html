@@ -230,6 +230,7 @@
   }
   .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
 </style>
+<script type="module" src="vendor/kuhy-credit/kuhy-credit.js"></script>
 </head>
 <body>
 <header>
@@ -984,5 +985,6 @@ refreshTypes();
 fetch("/api/phone").then((r) => r.json()).then((phone) => { $("#phone-open").hidden = !phone.url; }).catch(() => {});
 if (winnerWaits()) { cmpType = "*"; renderCompare(); $("#cmp").showModal(); }
 </script>
+<footer style="position:fixed;right:16px;bottom:16px;z-index:1000"><kuhy-credit></kuhy-credit></footer>
 </body>
 </html>
