@@ -12,6 +12,20 @@ readonly HERE
 readonly CONFIG="${XDG_CONFIG_HOME:-$HOME/.config}/logo-review"
 readonly UNIT="${LOGO_REVIEW_UNIT:-logo-review}"
 
+# Stop the old unit and wait until systemd unloads it: stop returns before the garbage collector
+# drops a transient unit, and systemd-run refuses a name that is still loaded. No event marks the
+# unload, so this checks every 0.05 s for at most 5 s.
+stop_unit() {
+	local i
+	systemctl --user stop "$UNIT" 2>/dev/null || true
+	for ((i = 0; i < 100; i++)); do
+		[[ "$(systemctl --user show -p LoadState --value "$UNIT" 2>/dev/null)" != loaded ]] && return 0
+		sleep 0.05
+	done
+	echo "run.sh: $UNIT is still loaded after stop" >&2
+	return 1
+}
+
 main() {
 	local project="${1:?usage: run.sh <project-dir> [port] [public-url]}" port="${2:-8793}" public="${3:-}"
 	local -a reach=(--lan) logos=()
@@ -22,7 +36,7 @@ main() {
 	command -v qrencode >/dev/null || sudo pacman -S --needed --noconfirm qrencode
 	mkdir -p "$CONFIG"
 	printf 'PROJECT=%q\nPORT=%q\nPUBLIC=%q\n' "$project" "$port" "$public" >"$CONFIG/env"
-	systemctl --user stop "$UNIT" 2>/dev/null || true
+	stop_unit
 	systemd-run --user --collect --quiet --unit="$UNIT" -p Restart=on-failure \
 		python3 "$HERE/server.py" --project "$project" --port "$port" "${reach[@]}" \
 		--errors "${XDG_STATE_HOME:-$HOME/.local/state}/app-errors-spool/logo-review.jsonl" "${logos[@]}"

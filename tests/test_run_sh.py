@@ -39,3 +39,19 @@ def test_run_sh_starts_the_remembered_project_without_arguments(project: Path, t
             assert b'"round": 2' in res.read()
     finally:
         subprocess.run(["systemctl", "--user", "stop", UNIT], capture_output=True, check=False)
+
+
+@pytest.mark.skipif(subprocess.run(["systemctl", "--user", "is-system-running"], capture_output=True, check=False).returncode > 1, reason="no systemd user session")
+def test_run_sh_restarts_back_to_back(project: Path, tmp_path: Path) -> None:  # noqa: F811
+    """A restart right after a start never trips over the old unit systemd has not unloaded yet."""
+    with socket.socket() as probe:
+        probe.bind(("127.0.0.1", 0))
+        port = probe.getsockname()[1]
+    env = {**os.environ, "XDG_CONFIG_HOME": str(tmp_path / "config"), "LOGO_REVIEW_UNIT": UNIT, "LOGO_REVIEW_PORT": str(port),
+           "LOGO_REVIEW_SERVICES_SOURCE": (tmp_path / "no-logos").as_uri()}  # fmt: skip
+    try:
+        for _ in range(10):
+            started = run(env, str(project), "--no-open")
+            assert started.returncode == 0, started.stderr
+    finally:
+        subprocess.run(["systemctl", "--user", "stop", UNIT], capture_output=True, check=False)
