@@ -184,6 +184,7 @@ class _ContextsTabState extends State<ContextsTab> {
           child: IconToggle(
             key: const ValueKey('ctx-scheme'),
             label: 'Light or dark background',
+            tooltip: 'Background',
             icon: _dark ? Icons.light_mode : Icons.dark_mode,
             size: 36,
             onTap: () => setState(() => _dark = !_dark),

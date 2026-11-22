@@ -16,12 +16,12 @@ import 'package:logo_review/ui/type_bar.dart';
 import 'package:logo_review/ui/widgets.dart';
 import 'package:material_ui/material_ui.dart';
 
-const List<(String, IconData, String)> _verdicts = [
-  ('all', Icons.grid_view, 'All logos'),
-  ('none', Icons.radio_button_unchecked, 'Not judged yet'),
-  ('approve', Icons.check, 'Approved'),
-  ('improve', Icons.edit_outlined, 'Needs improvement'),
-  ('reject', Icons.close, 'Rejected'),
+const List<(String, IconData, String, String)> _verdicts = [
+  ('all', Icons.grid_view, 'All logos', 'All'),
+  ('none', Icons.radio_button_unchecked, 'Not judged yet', 'Unjudged'),
+  ('approve', Icons.check, 'Approved', 'Approved'),
+  ('improve', Icons.edit_outlined, 'Needs improvement', 'Improve'),
+  ('reject', Icons.close, 'Rejected', 'Rejected'),
 ];
 
 /// The grid of the round's logos.
@@ -75,6 +75,7 @@ class _GridPageState extends State<GridPage> {
                       IconToggle(
                         key: const ValueKey('tool-all'),
                         label: 'All tools',
+                        tooltip: 'All',
                         icon: Icons.grid_view,
                         selected: c.tool == 'all',
                         onTap: () => c.filter(tool: 'all'),
@@ -84,6 +85,7 @@ class _GridPageState extends State<GridPage> {
                         IconToggle(
                           key: ValueKey('tool-$t'),
                           label: '$t only',
+                          tooltip: t,
                           selected: c.tool == t,
                           onTap: () => c.filter(tool: t),
                           child: sizedLogo(
@@ -110,6 +112,7 @@ class _GridPageState extends State<GridPage> {
                         child: IconToggle(
                           key: const ValueKey('ideas'),
                           label: 'Suggest a new direction',
+                          tooltip: 'Ideas',
                           icon: Icons.lightbulb_outline,
                           onTap: () => _push(IdeasPage(c, widget.services)),
                         ),
@@ -121,10 +124,11 @@ class _GridPageState extends State<GridPage> {
                   ),
                   Row(
                     children: [
-                      for (final (id, icon, label) in _verdicts) ...[
+                      for (final (id, icon, label, tip) in _verdicts) ...[
                         IconToggle(
                           key: ValueKey('show-$id'),
                           label: label,
+                          tooltip: tip,
                           icon: icon,
                           selected: c.verdict == id,
                           onTap: () => c.filter(verdict: id),

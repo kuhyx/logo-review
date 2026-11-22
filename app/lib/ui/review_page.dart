@@ -21,16 +21,16 @@ const List<(String, IconData, String)> _shapes = [
   ('ellipse', Icons.circle_outlined, 'Circle'),
   ('arrow', Icons.north_east, 'Arrow'),
 ];
-const List<(IconData, String)> _tabs = [
-  (Icons.edit_note, 'Note and marks'),
-  (Icons.chat_bubble_outline, 'Discussion'),
-  (Icons.devices, 'Where this logo will be shown'),
-  (Icons.history, 'History of this design'),
+const List<(IconData, String, String)> _tabs = [
+  (Icons.edit_note, 'Note and marks', 'Notes'),
+  (Icons.chat_bubble_outline, 'Discussion', 'Discussion'),
+  (Icons.devices, 'Where this logo will be shown', 'Previews'),
+  (Icons.history, 'History of this design', 'History'),
 ];
 const _verdicts = [
-  ('approve', 'Approve'),
-  ('improve', 'Request improvement'),
-  ('reject', 'Reject'),
+  ('approve', 'Approve', 'Approve'),
+  ('improve', 'Request improvement', 'Improve'),
+  ('reject', 'Reject', 'Reject'),
 ];
 
 /// The review of one logo; the arrows step through the filtered logos.
@@ -105,6 +105,7 @@ class _ReviewPageState extends State<ReviewPage> {
                         IconToggle(
                           key: const ValueKey('prev'),
                           label: 'Previous logo',
+                          tooltip: 'Previous',
                           icon: Icons.chevron_left,
                           onTap: () => _step(-1),
                         ),
@@ -121,13 +122,15 @@ class _ReviewPageState extends State<ReviewPage> {
                         IconToggle(
                           key: const ValueKey('next'),
                           label: 'Next logo',
+                          tooltip: 'Next',
                           icon: Icons.chevron_right,
                           onTap: () => _step(1),
                         ),
-                        for (final (id, label) in _verdicts)
+                        for (final (id, label, tip) in _verdicts)
                           IconToggle(
                             key: ValueKey('verdict-$id'),
                             label: label,
+                            tooltip: tip,
                             icon: verdictIcon(id),
                             fill: verdictColor(id),
                             selected: verdict == id,
@@ -136,6 +139,7 @@ class _ReviewPageState extends State<ReviewPage> {
                         IconToggle(
                           key: const ValueKey('close'),
                           label: 'Close',
+                          tooltip: 'Back',
                           icon: Icons.arrow_back,
                           onTap: () => Navigator.of(context).pop(),
                         ),
@@ -165,6 +169,7 @@ class _ReviewPageState extends State<ReviewPage> {
                             IconToggle(
                               key: ValueKey('shape-$id'),
                               label: label,
+                              tooltip: label,
                               icon: icon,
                               selected: _kind == id,
                               onTap: () => setState(() => _kind = id),
@@ -173,6 +178,7 @@ class _ReviewPageState extends State<ReviewPage> {
                           IconToggle(
                             key: const ValueKey('like'),
                             label: 'I like this part',
+                            tooltip: 'Like',
                             icon: Icons.add,
                             fill: likeColor,
                             selected: _like,
@@ -181,6 +187,7 @@ class _ReviewPageState extends State<ReviewPage> {
                           IconToggle(
                             key: const ValueKey('dislike'),
                             label: 'I dislike this part',
+                            tooltip: 'Dislike',
                             icon: Icons.remove,
                             fill: dislikeColor,
                             selected: !_like,
@@ -191,11 +198,12 @@ class _ReviewPageState extends State<ReviewPage> {
                     Row(
                       spacing: 6,
                       children: [
-                        for (final (i, (icon, label)) in _tabs.indexed)
+                        for (final (i, (icon, label, tip)) in _tabs.indexed)
                           Expanded(
                             child: IconToggle(
                               key: ValueKey('tab-$i'),
                               label: label,
+                              tooltip: tip,
                               icon: icon,
                               selected: _tab == i,
                               onTap: () => setState(() => _tab = i),

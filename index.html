@@ -236,17 +236,17 @@
 <header>
   <div class="group" id="tools" role="group" aria-label="Tool"></div>
   <div class="group" id="shows" role="group" aria-label="Verdict filter">
-    <button data-show="all" aria-pressed="true" aria-label="All logos" title="All logos"><svg class="i" viewBox="0 0 24 24"><rect x="4" y="4" width="6" height="6"/><rect x="14" y="4" width="6" height="6"/><rect x="4" y="14" width="6" height="6"/><rect x="14" y="14" width="6" height="6"/></svg></button>
-    <button data-show="none" aria-pressed="false" aria-label="Not judged yet" title="Not judged yet"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8" stroke-dasharray="3 4"/></svg></button>
+    <button data-show="all" aria-pressed="true" aria-label="All logos" title="All"><svg class="i" viewBox="0 0 24 24"><rect x="4" y="4" width="6" height="6"/><rect x="14" y="4" width="6" height="6"/><rect x="4" y="14" width="6" height="6"/><rect x="14" y="14" width="6" height="6"/></svg></button>
+    <button data-show="none" aria-pressed="false" aria-label="Not judged yet" title="Unjudged"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8" stroke-dasharray="3 4"/></svg></button>
     <button data-show="approve" aria-pressed="false" aria-label="Approved" title="Approved"><svg class="i" viewBox="0 0 24 24"><path d="M5 12l5 5 9-10"/></svg></button>
-    <button data-show="improve" aria-pressed="false" aria-label="Needs improvement" title="Needs improvement"><svg class="i" viewBox="0 0 24 24"><path d="M4 20l4-1 11-11-3-3L5 16z"/></svg></button>
+    <button data-show="improve" aria-pressed="false" aria-label="Needs improvement" title="Improve"><svg class="i" viewBox="0 0 24 24"><path d="M4 20l4-1 11-11-3-3L5 16z"/></svg></button>
     <button data-show="reject" aria-pressed="false" aria-label="Rejected" title="Rejected"><svg class="i" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
   </div>
   <div class="group" id="types" role="group" aria-label="Compare one type side by side"></div>
   <output id="shown" aria-label="Logos shown"></output>
-  <button id="grid-copy" class="copy" aria-label="Copy every logo as one picture" title="Copy every logo as one picture"><svg class="i ic-copy" viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg><svg class="i ic-ok" viewBox="0 0 24 24"><path d="M5 12l5 5 9-10"/></svg><svg class="i ic-fail" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
-  <button id="phone-open" hidden aria-label="Open on a phone" title="Open on a phone"><svg class="i" viewBox="0 0 24 24"><rect x="7" y="3" width="10" height="18" rx="2"/><path d="M11 18h2"/></svg></button>
-  <button id="ideas-open" aria-label="Suggest a new direction" title="Suggest a new direction"><svg class="i" viewBox="0 0 24 24"><path d="M9 18h6M10 21h4M8 14a6 6 0 1 1 8 0c-.7.7-1 1.300-1 2H9c0-.7-.3-1.300-1-2z"/></svg><span class="n"></span></button>
+  <button id="grid-copy" class="copy" aria-label="Copy every logo as one picture" title="Copy"><svg class="i ic-copy" viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg><svg class="i ic-ok" viewBox="0 0 24 24"><path d="M5 12l5 5 9-10"/></svg><svg class="i ic-fail" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+  <button id="phone-open" hidden aria-label="Open on a phone" title="Phone"><svg class="i" viewBox="0 0 24 24"><rect x="7" y="3" width="10" height="18" rx="2"/><path d="M11 18h2"/></svg></button>
+  <button id="ideas-open" aria-label="Suggest a new direction" title="Ideas"><svg class="i" viewBox="0 0 24 24"><path d="M9 18h6M10 21h4M8 14a6 6 0 1 1 8 0c-.7.7-1 1.300-1 2H9c0-.7-.3-1.300-1-2z"/></svg><span class="n"></span></button>
   <div id="saved" role="status" aria-label="Saved" title="Saved"></div>
 </header>
 <main id="grid"></main>
@@ -267,15 +267,15 @@
       <div id="contexts" aria-label="This logo where it will be shown"><div id="ctx-inner"></div><div id="history"></div><output id="ctx-scale" aria-label="Preview scale"></output></div>
     <div class="side">
       <div class="group">
-        <button id="prev" aria-label="Previous logo" title="Previous logo"><svg class="i" viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></button>
+        <button id="prev" aria-label="Previous logo" title="Previous"><svg class="i" viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></button>
         <span class="id" id="dlg-id"></span>
-        <button id="next" aria-label="Next logo" title="Next logo"><svg class="i" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg></button>
-        <button id="hist-toggle" aria-pressed="false" aria-label="History of this design" title="History of this design" style="margin-left:auto"><svg class="i" viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 0 2.500-5.800M4 4v4h4M12 8v4l3 2"/></svg></button>
+        <button id="next" aria-label="Next logo" title="Next"><svg class="i" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg></button>
+        <button id="hist-toggle" aria-pressed="false" aria-label="History of this design" title="History" style="margin-left:auto"><svg class="i" viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 0 2.500-5.800M4 4v4h4M12 8v4l3 2"/></svg></button>
         <button id="close" aria-label="Close" title="Close"><svg class="i" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
       </div>
       <div class="group" role="group" aria-label="Verdict">
         <button data-verdict="approve" aria-pressed="false" aria-label="Approve" title="Approve"><svg class="i" viewBox="0 0 24 24"><path d="M5 12l5 5 9-10"/></svg></button>
-        <button data-verdict="improve" aria-pressed="false" aria-label="Request improvement" title="Request improvement"><svg class="i" viewBox="0 0 24 24"><path d="M4 20l4-1 11-11-3-3L5 16z"/></svg></button>
+        <button data-verdict="improve" aria-pressed="false" aria-label="Request improvement" title="Improve"><svg class="i" viewBox="0 0 24 24"><path d="M4 20l4-1 11-11-3-3L5 16z"/></svg></button>
         <button data-verdict="reject" aria-pressed="false" aria-label="Reject" title="Reject"><svg class="i" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
       </div>
       <label class="sr" for="note">Note about the whole logo</label>
@@ -286,8 +286,8 @@
         <button data-tool="ellipse" aria-pressed="false" aria-label="Circle" title="Circle"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/></svg></button>
         <button data-tool="arrow" aria-pressed="false" aria-label="Arrow" title="Arrow"><svg class="i" viewBox="0 0 24 24"><path d="M5 19L19 5M10 5h9v9"/></svg></button>
         <span style="width:12px"></span>
-        <button data-like="1" aria-pressed="true" aria-label="I like this part" title="I like this part"><svg class="i" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button>
-        <button data-like="0" aria-pressed="false" aria-label="I dislike this part" title="I dislike this part"><svg class="i" viewBox="0 0 24 24"><path d="M5 12h14"/></svg></button>
+        <button data-like="1" aria-pressed="true" aria-label="I like this part" title="Like"><svg class="i" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button>
+        <button data-like="0" aria-pressed="false" aria-label="I dislike this part" title="Dislike"><svg class="i" viewBox="0 0 24 24"><path d="M5 12h14"/></svg></button>
       </div>
       <div id="marks"></div>
       <hr>
@@ -304,7 +304,7 @@
 <dialog id="cmp" aria-label="Compare side by side at 20 px">
   <div class="group">
     <div class="group" id="cmp-types" role="group" aria-label="Type"></div>
-    <button id="cmp-copy" class="copy" aria-label="Copy this line-up as one picture" title="Copy this line-up as one picture" style="margin-left:auto"><svg class="i ic-copy" viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg><svg class="i ic-ok" viewBox="0 0 24 24"><path d="M5 12l5 5 9-10"/></svg><svg class="i ic-fail" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    <button id="cmp-copy" class="copy" aria-label="Copy this line-up as one picture" title="Copy" style="margin-left:auto"><svg class="i ic-copy" viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg><svg class="i ic-ok" viewBox="0 0 24 24"><path d="M5 12l5 5 9-10"/></svg><svg class="i ic-fail" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
     <button id="cmp-close" aria-label="Close" title="Close"><svg class="i" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
   </div>
   <div id="cmp-cols"></div>
@@ -339,7 +339,7 @@
     <svg class="i" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M4 18l6-5 4 3 3-2 4 4"/></svg>
     <div><label class="sr" for="idea-img">Reference picture (optional)</label><input id="idea-img" type="file" accept="image/png,image/jpeg,image/webp,image/gif"></div>
   </div>
-  <button id="idea-add" aria-label="Add suggestion" title="Add suggestion"><svg class="i" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button>
+  <button id="idea-add" aria-label="Add suggestion" title="Add"><svg class="i" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button>
 </dialog>
 
 <script type="module">
@@ -391,8 +391,8 @@ function buildGrid() {
   const talk = '<svg class="i talk" viewBox="0 0 24 24"><path d="M4 5h16v11H9l-5 4z"/></svg>';
   $("#grid").innerHTML = KEYS.map((key) =>
     `<button class="tile" data-key="${key}" aria-label="Review ${label(key)}"><img src="/img/${key}.png" alt="" loading="eager">${badge}<span class="id"><span>${key.split("/")[1].slice(0, 2)}${key.startsWith(TOOLS[0] + "/") ? "" : " " + key.split("/")[0]}</span>${talk}<span class="count"></span></span></button>`).join("");
-  $("#tools").innerHTML = `<button data-filter="all" aria-pressed="true" aria-label="All tools" title="All tools"><svg class="i" viewBox="0 0 24 24"><rect x="4" y="4" width="6" height="6"/><rect x="14" y="4" width="6" height="6"/><rect x="4" y="14" width="6" height="6"/><rect x="14" y="14" width="6" height="6"/></svg></button>` +
-    TOOLS.map((t) => `<button data-filter="${t}" aria-pressed="false" aria-label="${t} only" title="${t} only"><img src="/img/${t}/${MANIFEST.ids.findLast((id) => !skips(t).includes(id))}-c.png" alt=""></button>`).join("");
+  $("#tools").innerHTML = `<button data-filter="all" aria-pressed="true" aria-label="All tools" title="All"><svg class="i" viewBox="0 0 24 24"><rect x="4" y="4" width="6" height="6"/><rect x="14" y="4" width="6" height="6"/><rect x="4" y="14" width="6" height="6"/><rect x="14" y="14" width="6" height="6"/></svg></button>` +
+    TOOLS.map((t) => `<button data-filter="${t}" aria-pressed="false" aria-label="${t} only" title="${t}"><img src="/img/${t}/${MANIFEST.ids.findLast((id) => !skips(t).includes(id))}-c.png" alt=""></button>`).join("");
 }
 function answered(key) {
   const asked = state.logos[key]?.thread ?? [], replies = claude.answers[key] ?? [];
@@ -438,19 +438,19 @@ const AVATARS = [
   { id: "youtube", chip: "YT", name: "YouTube", color: "#ff0000", sizes: [176, 36, 24], cls: "round" },
   { id: "slack", chip: "Sl", name: "Slack", color: "#4a154b", sizes: [72, 36, 20], cls: "square" },
   { id: "gmail", chip: "G", name: "Gmail", color: "#ea4335", sizes: [96, 40, 32], cls: "round" },
-  { id: "square", chip: "□", name: "Square app icon and square avatar", color: "#70625b", sizes: [180, 64, 32], cls: "square" },
-].map((a) => ({ logo: a.id !== "square", ...a }));
+  { id: "square", chip: "□", name: "Square app icon and square avatar", tip: "Square", color: "#70625b", sizes: [180, 64, 32], cls: "square" },
+].map((a) => ({ logo: a.id !== "square", tip: a.name, ...a }));
 // The badge: hidden until the logo has loaded (then the chip goes), removed if it never does (the chip stays).
 const badge = (a) => a.logo ? `<img class="badge" src="/services/${a.id}.svg" width="20" height="20" alt="" aria-label="${a.name}" hidden onload="this.hidden=false;this.nextElementSibling.hidden=true" onerror="this.remove()">` : "";
 function contextPanel(scheme, src) {
   const img = (px) => `<img src="${src}" width="${px}" height="${px}" alt="">`;
   const cell = (px) => `<span class="cell">${img(px)}<span class="px">${px}</span></span>`;
   const avatars = AVATARS.map((a) =>
-    `<div class="ctx ${a.cls}" data-ctx="${a.id}" title="${a.name}"><span class="frame">${badge(a)}<span class="chip" style="background:${a.color}" aria-label="${a.name}">${a.chip}</span></span><div class="row">${a.sizes.map(cell).join("")}</div></div>`).join("");
-  const tab = `<div class="ctx" data-ctx="tab" title="Browser tab and bookmark tile"><div class="tabstrip"><span class="tab">${img(16)}<span class="line"></span>${X.replace('class="i"', 'class="i" style="width:14px;height:14px"')}</span><span class="tab big">${img(32)}</span></div><span class="px">16 · 32</span></div>`;
-  const header = (id, width, name) => `<div class="ctx" data-ctx="${id}" title="${name}"><div class="bar" style="width:${width}px">${img(28)}<span class="nav"></span><span class="nav"></span></div><span class="px">${width}</span></div>`;
-  const og = `<div class="ctx" data-ctx="og" title="Link preview card (og:image, 1200 x 630)"><div><div class="card">${img(0).replace('width="0" height="0"', "")}</div><div class="cardfoot"><i></i><i></i></div></div><span class="px">1200 × 630</span></div>`;
-  return `<div class="panel" data-scheme="${scheme}">${avatars}${tab}${header("header-desktop", 720, "Site header on desktop")}${header("header-mobile", 360, "Site header on mobile")}${og}</div>`;
+    `<div class="ctx ${a.cls}" data-ctx="${a.id}" title="${a.tip}"><span class="frame">${badge(a)}<span class="chip" style="background:${a.color}" aria-label="${a.name}">${a.chip}</span></span><div class="row">${a.sizes.map(cell).join("")}</div></div>`).join("");
+  const tab = `<div class="ctx" data-ctx="tab" title="Tab"><div class="tabstrip"><span class="tab">${img(16)}<span class="line"></span>${X.replace('class="i"', 'class="i" style="width:14px;height:14px"')}</span><span class="tab big">${img(32)}</span></div><span class="px">16 · 32</span></div>`;
+  const header = (id, width, tip) => `<div class="ctx" data-ctx="${id}" title="${tip}"><div class="bar" style="width:${width}px">${img(28)}<span class="nav"></span><span class="nav"></span></div><span class="px">${width}</span></div>`;
+  const og = `<div class="ctx" data-ctx="og" title="Preview"><div><div class="card">${img(0).replace('width="0" height="0"', "")}</div><div class="cardfoot"><i></i><i></i></div></div><span class="px">1200 × 630</span></div>`;
+  return `<div class="panel" data-scheme="${scheme}">${avatars}${tab}${header("header-desktop", 720, "Desktop")}${header("header-mobile", 360, "Mobile")}${og}</div>`;
 }
 function renderContexts(key) {
   const src = `/img/${key}.png`;
@@ -665,7 +665,7 @@ function renderMarks(draft) {
   $("#marks").replaceChildren(...e.marks.map((mark, i) => {
     const row = document.createElement("div");
     row.className = "row";
-    row.innerHTML = `<span class="n ${mark.like ? "" : "dislike"}">${i + 1}</span><input type="text" aria-label="Comment on mark ${i + 1}"><button aria-label="Delete mark ${i + 1}" title="Delete mark ${i + 1}">${X}</button>`;
+    row.innerHTML = `<span class="n ${mark.like ? "" : "dislike"}">${i + 1}</span><input type="text" aria-label="Comment on mark ${i + 1}"><button aria-label="Delete mark ${i + 1}" title="Delete">${X}</button>`;
     const input = $("input", row);
     input.value = mark.text;
     input.addEventListener("input", () => { mark.text = input.value; markDirty(); });
@@ -718,7 +718,7 @@ function renderIdeas() {
     if (idea.ref) { const a = text("a", "", idea.ref); a.href = idea.ref; a.target = "_blank"; a.rel = "noreferrer"; body.append(a); }
     if (idea.image) { const im = document.createElement("img"); im.src = `/ref/${idea.image}`; im.alt = ""; body.append(im); }
     const del = document.createElement("button");
-    del.innerHTML = X; del.setAttribute("aria-label", `Delete suggestion ${i + 1}`); del.title = `Delete suggestion ${i + 1}`;
+    del.innerHTML = X; del.setAttribute("aria-label", `Delete suggestion ${i + 1}`); del.title = "Delete";
     del.addEventListener("click", () => { state.ideas.splice(i, 1); renderIdeas(); refreshGrid(); markDirty(); });
     row.append(body, del);
     return row;
@@ -747,7 +747,7 @@ const TYPES = Object.keys(MANIFEST.types ?? {});
 const winnerWaits = () => TYPES.length > 0 && TYPES.every((t) => state.picks[t] || state.dropped.includes(t)) && Object.keys(state.picks).length > 0 && !state.winner;
 function buildTypes() {
   const buttons = TYPES.map((t) => `<button data-type="${t}" aria-pressed="false" aria-label="Compare the ${MANIFEST.types[t]} variants" title="${MANIFEST.types[t]}">${t}</button>`).join("") +
-    `<button data-type="*" aria-pressed="false" aria-label="Compare the picked finalists" title="Picked finalists">${STAR}</button>`;
+    `<button data-type="*" aria-pressed="false" aria-label="Compare the picked finalists" title="Finalists">${STAR}</button>`;
   $("#types").innerHTML = buttons;
   $("#cmp-types").innerHTML = buttons;
 }
@@ -773,7 +773,7 @@ function column(src, name, key, final = false) {
   col.className = key ? "col" : "col before";
   if (key) col.dataset.key = key;
   const sizes = (cls) => `<div class="sizes ${cls}"><img class="${cls ? "" : "real"}" src="${src}" width="20" height="20" alt=""><img src="${src}" width="32" height="32" alt=""><img src="${src}" width="48" height="48" alt=""></div>`;
-  col.innerHTML = `<div class="foot"><span class="name">${name}</span>${key ? `<button class="pick${final ? " crown" : ""}" aria-pressed="false" aria-label="${final ? "Winner:" : "Pick"} ${name}" title="${final ? "Winner:" : "Pick"} ${name}">${final ? CROWN : STAR}</button>` : ""}</div>` +
+  col.innerHTML = `<div class="foot"><span class="name">${name}</span>${key ? `<button class="pick${final ? " crown" : ""}" aria-pressed="false" aria-label="${final ? "Winner:" : "Pick"} ${name}" title="${final ? "Winner" : "Pick"}">${final ? CROWN : STAR}</button>` : ""}</div>` +
     `<img class="full" src="${src}" alt=""><canvas width="20" height="20" aria-label="${name} as a 20 px round avatar, enlarged"></canvas><div class="foot">${sizes("")}${sizes("dark")}</div>`;
   tiny($("canvas", col), src);
   return col;

@@ -58,6 +58,7 @@ class TypeBar extends StatelessWidget {
             IconToggle(
               key: const ValueKey('type-*'),
               label: 'Compare the picked finalists',
+              tooltip: 'Finalists',
               icon: waits ? Icons.star : Icons.star_border,
               selected: current == '*' || waits,
               onTap: c.state.picks.isEmpty ? null : () => onPick('*'),

@@ -65,6 +65,7 @@ class _ShareButtonState extends State<ShareButton> {
   @override
   Widget build(BuildContext context) => IconToggle(
     label: widget.label,
+    tooltip: 'Share',
     selected: _done != null,
     fill: _done ?? false ? likeColor : dislikeColor,
     onTap: _busy ? null : () => unawaited(_share()),

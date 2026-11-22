@@ -106,6 +106,7 @@ class _TalkTabState extends State<TalkTab> {
             IconToggle(
               key: const ValueKey('send'),
               label: 'Send',
+              tooltip: 'Send',
               icon: Icons.send,
               onTap: _send,
             ),

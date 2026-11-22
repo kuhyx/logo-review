@@ -77,6 +77,7 @@ class _IdeasPageState extends State<IdeasPage> {
                     IconToggle(
                       key: const ValueKey('close'),
                       label: 'Close',
+                      tooltip: 'Back',
                       icon: Icons.arrow_back,
                       onTap: () => Navigator.of(context).pop(),
                     ),
@@ -122,6 +123,7 @@ class _IdeasPageState extends State<IdeasPage> {
                           IconToggle(
                             key: ValueKey('idea-delete-$i'),
                             label: 'Delete suggestion ${i + 1}',
+                            tooltip: 'Delete',
                             icon: Icons.close,
                             size: 36,
                             onTap: () => c.edit((s) => s.ideas.removeAt(i)),
@@ -164,6 +166,7 @@ class _IdeasPageState extends State<IdeasPage> {
                     IconToggle(
                       key: const ValueKey('idea-image'),
                       label: 'Reference picture (optional)',
+                      tooltip: 'Picture',
                       selected: _image != null,
                       onTap: () async {
                         final picked = await widget.services.pickImage();
@@ -176,6 +179,7 @@ class _IdeasPageState extends State<IdeasPage> {
                     IconToggle(
                       key: const ValueKey('idea-add'),
                       label: 'Add suggestion',
+                      tooltip: 'Add',
                       icon: Icons.add,
                       onTap: () => unawaited(_add()),
                     ),

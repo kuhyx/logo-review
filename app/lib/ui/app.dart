@@ -88,6 +88,7 @@ class _Offline extends StatelessWidget {
           IconToggle(
             key: const ValueKey('retry'),
             label: 'Try again',
+            tooltip: 'Retry',
             icon: Icons.refresh,
             size: 64,
             onTap: () => unawaited(

@@ -38,6 +38,7 @@ class IconToggle extends StatelessWidget {
     this.selected = false,
     this.fill = AppPalette.accent,
     this.size = 44,
+    this.tooltip,
     super.key,
   });
 
@@ -62,11 +63,14 @@ class IconToggle extends StatelessWidget {
   /// Side length.
   final double size;
 
+  /// One word shown on hover or long-press; screen readers keep [label].
+  final String? tooltip;
+
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final ink = selected ? AppPalette.onFill : scheme.onSurface;
-    return Semantics(
+    final button = Semantics(
       label: label,
       button: true,
       selected: selected,
@@ -99,6 +103,10 @@ class IconToggle extends StatelessWidget {
         ),
       ),
     );
+    final tip = tooltip;
+    return tip == null
+        ? button
+        : Tooltip(message: tip, excludeFromSemantics: true, child: button);
   }
 }
 

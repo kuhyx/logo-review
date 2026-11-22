@@ -77,6 +77,7 @@ class MarksTab extends StatelessWidget {
                   IconToggle(
                     key: ValueKey('mark-delete-$i'),
                     label: 'Delete mark ${i + 1}',
+                    tooltip: 'Delete',
                     icon: Icons.close,
                     onTap: () =>
                         c.edit((s) => s.entry(logoKey).marks.remove(mark)),

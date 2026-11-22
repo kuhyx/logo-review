@@ -75,6 +75,7 @@ class _ComparePageState extends State<ComparePage> {
                       IconToggle(
                         key: const ValueKey('close'),
                         label: 'Close',
+                        tooltip: 'Back',
                         icon: Icons.arrow_back,
                         onTap: () => Navigator.of(context).pop(),
                       ),
@@ -171,6 +172,7 @@ class _Column extends StatelessWidget {
                 IconToggle(
                   key: ValueKey('pick-${col.key}'),
                   label: '${final_ ? 'Winner:' : 'Pick'} ${col.name}',
+                  tooltip: final_ ? 'Winner' : 'Pick',
                   icon: final_
                       ? Icons.emoji_events_outlined
                       : Icons.star_border,
