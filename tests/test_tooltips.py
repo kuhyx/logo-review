@@ -7,12 +7,13 @@ text, so only the template expressions listed in DATA_DRIVEN may appear.
 
 from __future__ import annotations
 
+import json
 import re
 from pathlib import Path
 
 PAGE = (Path(__file__).resolve().parent.parent / "index.html").read_text()
 ONE_WORD = re.compile(r"^[A-Za-z0-9-]{1,20}$")
-DATA_DRIVEN = {"${t}", "${MANIFEST.types[t]}", "${a.tip}", "${tip}", '${final ? "Winner" : "Pick"}'}
+DATA_DRIVEN = {"${t}", "${MANIFEST.types[t]}", "${a.tip}", "${tip}", "${o.tip}", '${final ? "Winner" : "Pick"}'}
 
 
 def _titles() -> list[str]:
@@ -34,3 +35,9 @@ def test_avatar_and_header_tips_are_one_word() -> None:
     tips = avatars + re.findall(r'header\("[^"]+", \d+, "([^"]*)"\)', PAGE)
     assert len(tips) >= 9
     assert [t for t in tips if not ONE_WORD.match(t)] == []
+
+
+def test_corner_mark_tips_are_one_word() -> None:
+    """The words fed into `${o.tip}`: each corner mark's tooltip in the #overlays table."""
+    table = json.loads(re.search(r'<script type="application/json" id="overlays">(.*?)</script>', PAGE, re.S).group(1))
+    assert sorted({m["tip"] for m in table.values()}) == ["Edit", "Online"]
