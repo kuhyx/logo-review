@@ -139,6 +139,11 @@
   .ctx img { display: block; flex: none; }
   .ctx.round img { border-radius: 50%; }
   .ctx.square img { border-radius: 22%; }
+  .ctx .av { position: relative; display: block; overflow: visible; }
+  .ov { position: absolute; border-radius: 50%; box-shadow: 0 0 0 var(--ring) var(--panel); display: grid; place-items: center; }
+  .ov svg { width: 58%; height: 58%; }
+  .panel[data-scheme="light"] { --panel: #f6f4f3; }
+  .panel[data-scheme="dark"] { --panel: #211d1b; }
   .chip { justify-self: start; min-width: 26px; height: 20px; padding: 0 6px; border-radius: 5px; color: #fff;
     font-size: 12px; font-weight: 700; line-height: 20px; text-align: center; }
   /* The badge sits left of its sizes, not above them: 15 places stay one screen tall at 4K. */
@@ -342,6 +347,21 @@
   <button id="idea-add" aria-label="Add suggestion" title="Add"><svg class="i" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button>
 </dialog>
 
+<!-- The corner mark each service draws over an avatar, per listed size: [centre x, centre y, diameter, ring],
+     fractions of the avatar's side; the ring is the cut-out gap the service leaves around the mark.
+     Discord 32: measured on kuhy's Discord screenshot (10 px dot, 3 px gap, centre 27 px); 40 and 80 use Discord's
+     12 and 16 px status dots. Gmail: measured on kuhy's Google account menu screenshot (the edit pencil), used at
+     every size. Slack, Telegram, Facebook: their presence dot at the sizes their lists show it. Strict JSON:
+     the round's ink check (logo16/test_r16.py) reads this same block. -->
+<script type="application/json" id="overlays">
+{
+ "discord": {"tip": "Online", "kind": "dot", "color": "#23a55a", "at": {"80": [0.85, 0.85, 0.2, 0.075], "40": [0.85, 0.85, 0.3, 0.075], "32": [0.84375, 0.84375, 0.3125, 0.09375]}},
+ "facebook": {"tip": "Online", "kind": "dot", "color": "#31a24c", "at": {"168": [0.86, 0.86, 0.15, 0.03], "40": [0.85, 0.85, 0.3, 0.05], "32": [0.85, 0.85, 0.32, 0.0625]}},
+ "telegram": {"tip": "Online", "kind": "dot", "color": "#0ac630", "at": {"160": [0.86, 0.86, 0.15, 0.03], "54": [0.86, 0.86, 0.26, 0.05], "42": [0.86, 0.86, 0.28, 0.05]}},
+ "slack": {"tip": "Online", "kind": "dot", "color": "#2bac76", "at": {"72": [0.9, 0.9, 0.22, 0.05], "36": [0.9, 0.9, 0.3, 0.08], "20": [0.9, 0.9, 0.4, 0.1]}},
+ "gmail": {"tip": "Edit", "kind": "pencil", "color": "#3c4043", "at": {"96": [0.86, 0.8, 0.39, 0.04], "40": [0.86, 0.8, 0.39, 0.04], "32": [0.86, 0.8, 0.39, 0.04]}}
+}
+</script>
 <script type="module">
 // The round on show (tools and design ids) comes from the server's manifest.
 const MANIFEST = await (await fetch("/api/manifest")).json();
@@ -442,11 +462,21 @@ const AVATARS = [
 ].map((a) => ({ logo: a.id !== "square", tip: a.name, ...a }));
 // The badge: hidden until the logo has loaded (then the chip goes), removed if it never does (the chip stays).
 const badge = (a) => a.logo ? `<img class="badge" src="/services/${a.id}.svg" width="20" height="20" alt="" aria-label="${a.name}" hidden onload="this.hidden=false;this.nextElementSibling.hidden=true" onerror="this.remove()">` : "";
+// The service's own corner mark over an avatar of `px` (see #overlays), always on, so a covered corner shows.
+const OVERLAYS = JSON.parse(document.getElementById("overlays").textContent);
+const PENCIL = '<svg viewBox="0 0 24 24"><path d="M5 19l1-4L16 5l3 3L9 18z" fill="none" stroke="#e8eaed" stroke-width="2" stroke-linejoin="round"/></svg>';
+function cornerMark(id, px) {
+  const o = OVERLAYS[id], at = o?.at[String(px)];
+  if (!at) return "";
+  const [cx, cy, d, ring] = at, size = d * px;
+  const style = `left:${(cx * px - size / 2).toFixed(2)}px;top:${(cy * px - size / 2).toFixed(2)}px;width:${size.toFixed(2)}px;height:${size.toFixed(2)}px;background:${o.color};--ring:${(ring * px).toFixed(2)}px`;
+  return `<span class="ov ov-${o.kind}" style="${style}" title="${o.tip}" aria-label="${o.tip}">${o.kind === "pencil" ? PENCIL : ""}</span>`;
+}
 function contextPanel(scheme, src) {
   const img = (px) => `<img src="${src}" width="${px}" height="${px}" alt="">`;
-  const cell = (px) => `<span class="cell">${img(px)}<span class="px">${px}</span></span>`;
+  const cell = (a, px) => `<span class="cell"><span class="av">${img(px)}${cornerMark(a.id, px)}</span><span class="px">${px}</span></span>`;
   const avatars = AVATARS.map((a) =>
-    `<div class="ctx ${a.cls}" data-ctx="${a.id}" title="${a.tip}"><span class="frame">${badge(a)}<span class="chip" style="background:${a.color}" aria-label="${a.name}">${a.chip}</span></span><div class="row">${a.sizes.map(cell).join("")}</div></div>`).join("");
+    `<div class="ctx ${a.cls}" data-ctx="${a.id}" title="${a.tip}"><span class="frame">${badge(a)}<span class="chip" style="background:${a.color}" aria-label="${a.name}">${a.chip}</span></span><div class="row">${a.sizes.map((px) => cell(a, px)).join("")}</div></div>`).join("");
   const tab = `<div class="ctx" data-ctx="tab" title="Tab"><div class="tabstrip"><span class="tab">${img(16)}<span class="line"></span>${X.replace('class="i"', 'class="i" style="width:14px;height:14px"')}</span><span class="tab big">${img(32)}</span></div><span class="px">16 · 32</span></div>`;
   const header = (id, width, tip) => `<div class="ctx" data-ctx="${id}" title="${tip}"><div class="bar" style="width:${width}px">${img(28)}<span class="nav"></span><span class="nav"></span></div><span class="px">${width}</span></div>`;
   const og = `<div class="ctx" data-ctx="og" title="Preview"><div><div class="card">${img(0).replace('width="0" height="0"', "")}</div><div class="cardfoot"><i></i><i></i></div></div><span class="px">1200 × 630</span></div>`;

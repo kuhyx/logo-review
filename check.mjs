@@ -231,6 +231,21 @@ try {
   const mark = await js("(() => { const c = document.querySelector('#contexts [data-ctx=og] .card').getBoundingClientRect(), i = document.querySelector('#contexts [data-ctx=og] .card img').getBoundingClientRect(); return { dx: (i.left + i.right) / 2 - (c.left + c.right) / 2, dy: (i.top + i.bottom) / 2 - (c.top + c.bottom) / 2, inside: i.top >= c.top && i.bottom <= c.bottom, ratio: i.height / c.height }; })()");
   expect(Math.abs(mark.dx) < 1 && Math.abs(mark.dy) < 1 && mark.inside && Math.abs(mark.ratio - 0.67) < 0.02, "the whole logo sits centred on the og card");
   expect(near(await js("document.querySelector('#contexts [data-ctx=header-mobile] .bar').getBoundingClientRect().width"), 360), "the mobile header is 360 px wide at the shown scale");
+  // Overlays: the corner mark a service draws over an avatar (a status dot, Google's pencil) at every listed size.
+  const overlays = await js(`(() => { const out = {}; for (const el of document.querySelectorAll('#contexts [data-scheme] .ctx')) {
+    const imgs = [...el.querySelectorAll('.row img')];
+    out[el.closest('[data-scheme]').dataset.scheme + '/' + el.dataset.ctx] = imgs.map((img) => { const o = img.parentElement.querySelector('.ov'); if (!o) return null;
+      const i = img.getBoundingClientRect(), r = o.getBoundingClientRect(), mx = i.left + i.width / 2, my = i.top + i.height / 2;
+      return { tip: o.getAttribute('title'), corner: r.left >= mx && r.top >= my && r.left < i.right && r.top < i.bottom && (r.left + r.right) / 2 > mx && (r.top + r.bottom) / 2 > my }; }); } return out; })()`);
+  const OVERLAID = { discord: "Online", gmail: "Edit", slack: "Online", telegram: "Online", facebook: "Online" };
+  for (const scheme of ["light", "dark"]) {
+    for (const [name, tip] of Object.entries(OVERLAID)) {
+      const cells = overlays[`${scheme}/${name}`] || [];
+      expect(cells.length > 0 && cells.every((c) => c && c.corner && c.tip === tip), `${scheme}: every ${name} preview has its "${tip}" overlay over the bottom-right corner`);
+    }
+    const plain = SERVICES.filter((s) => !(s in OVERLAID)).concat("square");
+    expect(plain.every((s) => (overlays[`${scheme}/${s}`] || []).every((c) => c === null)), `${scheme}: the other services have no overlay`);
+  }
 
   // 6. History: how this design looked in earlier rounds, what kuhy said then, and what changed.
   await click("#hist-toggle");

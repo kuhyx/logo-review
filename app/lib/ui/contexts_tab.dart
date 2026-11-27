@@ -6,6 +6,7 @@ import 'package:design_system/design_system.dart';
 import 'package:logo_review/controller.dart';
 import 'package:logo_review/ui/avatars.dart';
 import 'package:logo_review/ui/contexts_parts.dart';
+import 'package:logo_review/ui/corner_mark.dart';
 import 'package:logo_review/ui/service_badge.dart';
 import 'package:logo_review/ui/widgets.dart';
 import 'package:material_ui/material_ui.dart';
@@ -36,6 +37,7 @@ class _ContextsTabState extends State<ContextsTab> {
     final line = _dark ? AppPalette.lineDark : AppPalette.lineLight;
     final ui = _dark ? AppPalette.inkRaised1 : AppPalette.paperRaised;
     final ink = _dark ? AppPalette.mutedOnDark : AppPalette.mutedOnLight;
+    final back = _dark ? AppPalette.ink : AppPalette.paper;
     Widget px(String s) => Text(
       s,
       textScaler: TextScaler.noScaling,
@@ -88,7 +90,12 @@ class _ContextsTabState extends State<ContextsTab> {
                   Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      sizedLogo(pictures, path, size, radius: a.radius),
+                      markedAvatar(
+                        sizedLogo(pictures, path, size, radius: a.radius),
+                        a.id,
+                        size,
+                        ring: back,
+                      ),
                       px('${size.round()}'),
                     ],
                   ),
@@ -144,7 +151,7 @@ class _ContextsTabState extends State<ContextsTab> {
           child: Container(
             key: ValueKey(_dark ? 'ctx-dark' : 'ctx-light'),
             decoration: BoxDecoration(
-              color: _dark ? AppPalette.ink : AppPalette.paper,
+              color: back,
               border: Border.all(color: line),
               borderRadius: BorderRadius.circular(AppRadius.sm),
             ),

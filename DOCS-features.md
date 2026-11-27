@@ -17,6 +17,11 @@ preview, its chip when the server has no logo yet. `services.py` fetches them at
 (pinned version, one CDN host) into the gitignored `assets/services/`; `/services/<id>.svg|png` serves the 14 ids only.
 Checks: `tests/test_services.py`, `check.mjs` (fake local mirror, no network), `app/test/badge_test.dart`.
 
+Corner marks: Discord, Gmail (Google's edit pencil), Slack, Telegram and Facebook draw their own mark over the
+avatar's bottom-right corner at every listed size, always on, so a logo that hides a letter there shows it.
+One table, the `#overlays` JSON block in `index.html`, mirrored in `app/lib/ui/corner_mark.dart`.
+Checks: `check.mjs`, `app/test/overlay_test.dart` (also compares the two tables).
+
 Phone layout (nothing scrolls on a main screen, the keyboard covers nothing): `app/test/layout_test.dart`.
 
 ## Access
