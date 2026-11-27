@@ -209,5 +209,38 @@ void main() {
         expect(await store.read('/b.png'), isNull);
       },
     );
+
+    // A cold start is a new store on the same folder, as after a reboot.
+    test('a cold start offline reads the round and the unsent note from '
+        'disk and sends the note once the server is back', () async {
+      final server = FakeServer();
+      final first = controllerFor(
+        server,
+        local: FileLocalStore(Future.value(dir)),
+      );
+      await first.start();
+      expect(await first.pictures.bytes(_logo), png);
+      server.down = true;
+      first.edit((s) => s.entry('css/A1-c').note = 'on disk');
+      await wait();
+      first.dispose();
+
+      final second = controllerFor(
+        server,
+        local: FileLocalStore(Future.value(dir)),
+      );
+      await second.start();
+      expect((second.phase, second.manifest.round), (Phase.ready, 3));
+      expect(second.designer.designs['A1'], 'Why A1 looks like this.');
+      expect(await second.pictures.bytes(_logo), png);
+      expect(
+        (second.state.entry('css/A1-c').note, second.dirty),
+        ('on disk', true),
+      );
+      server.down = false;
+      await wait(200);
+      expect((note(server)['note'], second.dirty), ('on disk', false));
+      second.dispose();
+    });
   });
 }
