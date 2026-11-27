@@ -3,6 +3,7 @@
 - run: `./run.sh [project-dir]` (server + desktop window; `scripts/run.sh <project-dir>` is the server alone)
 - test: `python3 -m pytest && scripts/check_app.sh`
 - e2e: `LOGO_REVIEW_PROJECT=<project-dir> ./run-check.sh check.mjs && LOGO_REVIEW_PROJECT=<project-dir> ./run-check.sh check-mobile.mjs`
+- emulator: `scripts/emulator_apk.sh prep <port>`, then `dart`, `kotlin`, `assemble`, `install`, one call each (debug APK on this session's emulator against a test server on <port>; never a one-shot `flutter build`, `scripts/check_no_oneshot_build.sh` gates it)
 - deploy: `~/src/logo-review/scripts/deploy.sh` (server); `~/.claude/scripts/phone_deploy.sh ~/src/logo-review/app --release --stage <step>` (phone app)
 
 ## Notes
