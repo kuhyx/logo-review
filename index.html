@@ -592,6 +592,7 @@ function renderHistory() {
       verdict: entries.find((e) => e.verdict)?.verdict ?? null,
       marks: entries.flatMap((e) => e.marks ?? []),
       note: [...new Set(entries.map((e) => e.note).filter(Boolean))].join("\n"),
+      thread: entries.flatMap((e) => (e.thread ?? []).map((m) => m.text)),
     };
     const badge = said?.verdict ? `<svg class="i v ${said.verdict}" viewBox="0 0 24 24">${VERDICT_ICON[said.verdict]}</svg>` : "";
     card.innerHTML = `<div class="head"><span>${step.round} · ${step.id.toUpperCase()}</span>${badge}</div><div class="pic"><img src="${src}" alt=""><svg viewBox="0 0 1000 1000"></svg></div>`;
@@ -605,6 +606,7 @@ function renderHistory() {
       if (mark.text) quotes.push(`${n + 1}. ${mark.text}`);
     });
     if (said?.note) quotes.push(said.note);
+    quotes.push(...(said?.thread ?? []));
     const words = document.createElement("div");
     words.className = "words";
     words.append(text("p", "said", quotes.join("\n")), text("p", "changed", step.text));

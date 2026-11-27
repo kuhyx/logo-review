@@ -209,6 +209,26 @@ void main() {
     expect(pastOf(manifest, History(), 'css/A1-c'), isEmpty);
   });
 
+  test('history quotes the thread of an archived round too', () {
+    final json = FakeServer().history;
+    final said = (json['said'] as Map)['2'] as Map;
+    final entry = <String, dynamic>{...said['css/A1-c'] as Map}
+      ..['thread'] = [
+        {'text': 'keep the corner free', 'at': '2026-11-27T10:00:00Z'},
+      ];
+    final history = History.fromJson({
+      ...json,
+      'said': {
+        ...json['said'] as Map,
+        '2': {...said, 'css/A1-c': entry},
+      },
+    });
+    expect(
+      pastOf(manifest, history, 'css/A1-c')[1].said,
+      '1. this arm\ntoo thin\nkeep the corner free',
+    );
+  });
+
   test('an idea keeps only http links as references', () {
     final now = DateTime.utc(2026);
     expect(ideaFrom(' ', '', '', now), isNull);

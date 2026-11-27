@@ -263,6 +263,11 @@ try {
   expect(hist.shown && hist.previewsHidden && hist.pressed === "true", "the history button swaps the previews for the design's history");
   expect(hist.rounds === "4,5,6,7,8,13" && hist.loaded, "the history shows the rounds that picture was in, and now, with every picture loaded");
   expect(hist.quoted >= 1, `earlier steps quote what kuhy said about that logo then (${hist.quoted} steps)`);
+  // What kuhy wrote in a logo's thread in an archived round is part of what he said then.
+  const archive = await (await fetch(`${base}/api/history`)).json();
+  const threadSaid = await js(`[...document.querySelectorAll('#history .step')].map((s) => [s.dataset.round, s.querySelector('.head span').textContent.split(' · ')[1], s.querySelector('.said')?.textContent ?? ''])`);
+  const archivedAsks = threadSaid.flatMap(([round, id, said]) => (archive.tools[round] ?? []).flatMap((t) => (archive.said[round]?.[`${t}/${id}-c`]?.thread ?? []).map((m) => ({ text: m.text, said }))));
+  expect(archivedAsks.every((m) => m.said.includes(m.text)), `earlier steps quote kuhy's thread messages of that round (${archivedAsks.length} in this history)`);
   expect(hist.changed.length > 30 && hist.now === `/img/${KEY}.png`, "the last step is the current logo with what changed");
   expect(hist.fits, "the history view does not scroll either");
   await shot("review-history.png");

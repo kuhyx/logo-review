@@ -156,6 +156,7 @@ Past _past(Manifest m, History h, String key, String mode, Step step) {
       for (final e in entries)
         if (e.note.isNotEmpty) e.note,
     },
+    for (final e in entries) ...e.thread.map((m) => m.text),
   ];
   return (
     round: step.round,
