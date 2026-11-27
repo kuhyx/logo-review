@@ -11,6 +11,7 @@ What the tool does, and the five flows that must keep working. Each flow names t
 | 3 | Compare one type's variants as the 20 px avatar, pick one per type, then the winner | `app/test/flows_test.dart` ("compare: ..."); page: `check.mjs` |
 | 4 | Share a line-up, or every logo, as one picture | `app/test/flows_test.dart` ("share every logo ..."); page: `check-mobile.mjs` |
 | 5 | Suggest a new direction with a link and a reference picture | `app/test/flows_test.dart` ("ideas: ..."); server: `tests/test_server.py` |
+| 6 | Offline: feedback and ideas (with their picture) are kept on the phone at once and sent by themselves when the server answers; the last round and its pictures show offline and after a restart | `app/test/offline_test.dart` |
 
 Service logos: each avatar place (14 services) wears the service's real mark as its frame badge, white on the dark
 preview, its chip when the server has no logo yet. `services.py` fetches them at server start from simple-icons

@@ -36,10 +36,22 @@ class LogoReviewApp extends StatefulWidget {
 }
 
 class _LogoReviewAppState extends State<LogoReviewApp> {
+  late final AppLifecycleListener _life;
+
   @override
   void initState() {
     super.initState();
+    // Back on screen: what waits is sent (offline-first).
+    _life = AppLifecycleListener(
+      onResume: () => unawaited(widget.controller.resume()),
+    );
     unawaited(widget.controller.start());
+  }
+
+  @override
+  void dispose() {
+    _life.dispose();
+    super.dispose();
   }
 
   @override

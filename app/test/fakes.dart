@@ -8,6 +8,7 @@ import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:logo_review/api.dart';
 import 'package:logo_review/controller.dart';
+import 'package:logo_review/local.dart';
 import 'package:logo_review/store.dart';
 import 'package:logo_review/ui/app.dart';
 import 'package:logo_review/ui/services.dart';
@@ -88,6 +89,9 @@ class FakeServer {
   final refs = <String>[];
   final requests = <String>[];
 
+  /// Runs as each request arrives, before it is answered.
+  void Function(http.Request request)? onRequest;
+
   /// Services whose logo the server has not fetched (404).
   final missingLogos = <String>{};
 
@@ -96,6 +100,7 @@ class FakeServer {
   Future<http.Response> _handle(http.Request r) async {
     final path = r.url.path;
     requests.add('${r.method} $path');
+    onRequest?.call(r);
     if (down) throw http.ClientException('down');
     if (failWith != 0) return http.Response('', failWith);
     http.Response json(Object v) => http.Response.bytes(
@@ -158,11 +163,14 @@ ReviewController controllerFor(
   FakeServer server, {
   String token = 'device-key',
   void Function(Object, StackTrace)? onError,
+  LocalStore? local,
 }) => ReviewController(
   ReviewApi(server.client, base: 'http://test'),
   MemoryTokenStore(token),
+  local: local ?? MemoryLocalStore(),
   onError: onError,
   saveDelay: const Duration(milliseconds: 10),
+  retryDelay: const Duration(milliseconds: 10),
 );
 
 /// Pixel 6a: 1080 x 2400 at 2.625.

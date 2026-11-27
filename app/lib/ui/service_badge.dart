@@ -9,7 +9,7 @@ import 'package:material_ui/material_ui.dart';
 
 /// The logo of [avatar]'s service from the server, in its brand colour on
 /// light and white on [dark]; the chip while it loads and when there is none.
-/// The round's [pictures] cache keeps it for the session.
+/// The round's [pictures] cache keeps it on the phone, so it shows offline.
 class ServiceBadge extends StatefulWidget {
   /// Creates the badge.
   const new(this.pictures, this.avatar, {required this.dark, super.key});

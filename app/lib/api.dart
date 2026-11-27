@@ -63,7 +63,8 @@ class ReviewApi {
     return res;
   }
 
-  Future<Json> _get(String path) async {
+  /// The JSON object at [path].
+  Future<Json> getJson(String path) async {
     final res = await _checked(path, client.get(url(path), headers: headers));
     return asObject(jsonDecode(utf8.decode(res.bodyBytes)));
   }
@@ -86,19 +87,19 @@ class ReviewApi {
 
   /// The round on show.
   Future<Manifest> manifest() async =>
-      Manifest.fromJson(await _get('/api/manifest'));
+      Manifest.fromJson(await getJson('/api/manifest'));
 
   /// The saved feedback.
   Future<ReviewState> state() async =>
-      ReviewState.fromJson(await _get('/api/state'));
+      ReviewState.fromJson(await getJson('/api/state'));
 
   /// The designs' earlier rounds.
   Future<History> history() async =>
-      History.fromJson(await _get('/api/history'));
+      History.fromJson(await getJson('/api/history'));
 
   /// The designer's rationale and answers.
   Future<Designer> designer() async =>
-      Designer.fromJson(await _get('/api/claude'));
+      Designer.fromJson(await getJson('/api/claude'));
 
   /// Replaces the saved feedback.
   Future<void> save(ReviewState state) async {

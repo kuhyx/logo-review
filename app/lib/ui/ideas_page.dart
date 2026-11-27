@@ -41,19 +41,17 @@ class _IdeasPageState extends State<IdeasPage> {
 
   Future<void> _add() async {
     final picked = _image;
-    var file = '';
-    if (picked != null) {
-      try {
-        file = await c.api.uploadRef(picked.bytes, picked.mime);
-      } on Exception catch (e, stack) {
-        c.onError?.call(e, stack);
-      }
-    }
-    final idea = ideaFrom(_text.text, _ref.text, file, DateTime.now());
+    // The picture's server name comes once it is up; any mark counts here.
+    final idea = ideaFrom(
+      _text.text,
+      _ref.text,
+      picked == null ? '' : picked.mime,
+      DateTime.now(),
+    );
     if (idea == null) return;
     _text.clear();
     _ref.clear();
-    c.edit((s) => s.ideas.add(idea));
+    await c.addIdea(idea, picked);
     if (mounted) setState(() => _image = null);
   }
 
